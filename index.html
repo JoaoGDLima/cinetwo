@@ -993,6 +993,45 @@
     font-weight: 600;
   }
 
+
+  /* CHECK ANIMATION */
+  @keyframes checkPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  .check-circle.popping { animation: checkPop 0.4s cubic-bezier(.36,.07,.19,.97); }
+
+  /* CONFETTI PARTICLE */
+  .confetti-particle {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 1;
+    animation: confettiFall var(--dur, 0.9s) ease-out forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.3); opacity: 0; }
+  }
+
+  /* STREAK CARD */
+  .st-streak-card {
+    margin: 10px 14px 0;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .st-streak-icon { font-size: 32px; flex-shrink: 0; }
+  .st-streak-val  { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+  .st-streak-lbl  { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+  .st-streak-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1305,6 +1344,16 @@
       <div class="st-mini-icon">🍿</div>
       <div class="st-mini-val" id="st-remaining-time">—</div>
       <div class="st-mini-lbl">Para assistir</div>
+    </div>
+  </div>
+
+  <!-- streak -->
+  <div class="st-streak-card">
+    <div class="st-streak-icon" id="st-streak-icon">🎬</div>
+    <div>
+      <div class="st-streak-val" id="st-streak-val">—</div>
+      <div class="st-streak-lbl" id="st-streak-lbl">dias sem assistir</div>
+      <div class="st-streak-sub" id="st-streak-sub"></div>
     </div>
   </div>
 
@@ -1893,13 +1942,43 @@
     const nowDone = !m.done;
     const patch = { done: nowDone };
     if (nowDone) {
-      // Use local midnight to avoid UTC timezone shift on display
       const now = new Date();
       patch.watchedAt = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      // animate check circle
+      const circle = document.querySelector(`#item-${id} .check-circle`);
+      if (circle) {
+        circle.classList.add('popping');
+        circle.addEventListener('animationend', () => circle.classList.remove('popping'), { once: true });
+        spawnConfetti(circle);
+      }
     } else {
       patch.watchedAt = null;
     }
     await update(ref(db, `movies/${id}`), patch);
+  };
+
+  function spawnConfetti(anchor) {
+    const rect   = anchor.getBoundingClientRect();
+    const cx     = rect.left + rect.width  / 2;
+    const cy     = rect.top  + rect.height / 2;
+    const colors = ['#ff6b6b','#6366f1','#ec4899','#14b8a6','#f59e0b','#10b981'];
+    for (let i = 0; i < 18; i++) {
+      const el  = document.createElement('div');
+      el.className = 'confetti-particle';
+      const angle  = (Math.random() * 360) * (Math.PI / 180);
+      const dist   = 40 + Math.random() * 60;
+      el.style.cssText = [
+        `left:${cx}px`, `top:${cy}px`,
+        `background:${colors[i % colors.length]}`,
+        `--dx:${Math.cos(angle)*dist}px`,
+        `--dy:${Math.sin(angle)*dist - 20}px`,
+        `--rot:${Math.random()*360}deg`,
+        `--dur:${0.6 + Math.random()*0.4}s`,
+        `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`
+      ].join(';');
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
   };
 
   // ─── delete ───────────────────────────────────────────────
@@ -2023,6 +2102,49 @@
     document.getElementById('name1-in').value = n.joao || '';
     document.getElementById('name2-in').value = n.ela  || '';
     document.getElementById('pwd-new').value  = '';
+    // ── streak: days since last watched ──
+    const watchedDates = done
+      .filter(m => m.watchedAt)
+      .map(m => m.watchedAt)
+      .sort((a,b) => b - a);
+
+    if (watchedDates.length) {
+      const last      = new Date(watchedDates[0]);
+      const today     = new Date();
+      today.setHours(0,0,0,0);
+      last.setHours(0,0,0,0);
+      const diffDays  = Math.round((today - last) / 86400000);
+      const lastStr   = last.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+
+      let icon, val, lbl, sub;
+      if (diffDays === 0) {
+        icon = '🔥'; val = 'Hoje!'; lbl = 'último filme assistido';
+        sub  = `Assistiram em ${lastStr}`;
+      } else if (diffDays === 1) {
+        icon = '😊'; val = '1 dia'; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr}`;
+      } else if (diffDays <= 7) {
+        icon = '🙂'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr}`;
+      } else if (diffDays <= 30) {
+        icon = '😬'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr} — tá na hora!`;
+      } else {
+        icon = '😱'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr} — socorro!`;
+      }
+      document.getElementById('st-streak-icon').textContent = icon;
+      document.getElementById('st-streak-val').textContent  = val;
+      document.getElementById('st-streak-lbl').textContent  = lbl;
+      document.getElementById('st-streak-sub').textContent  = sub;
+      document.getElementById('st-streak-card') && (document.querySelector('.st-streak-card').style.display = 'flex');
+    } else {
+      document.getElementById('st-streak-icon').textContent = '🎬';
+      document.getElementById('st-streak-val').textContent  = '—';
+      document.getElementById('st-streak-lbl').textContent  = 'nenhum filme assistido ainda';
+      document.getElementById('st-streak-sub').textContent  = '';
+    }
+
     document.getElementById('main-screen').style.display     = 'none';
     document.getElementById('settings-screen').style.display = 'block';
   };
@@ -2759,6 +2881,49 @@
     document.getElementById('st-genres').innerHTML = sorted.length
       ? sorted.map(([g,n]) => `<div class="st-gpill"><span class="st-gnum">${n}</span>${escHtml(g)}</div>`).join('')
       : `<span style="font-size:13px;color:var(--muted);">Ainda sem dados suficientes</span>`;
+
+    // ── streak: days since last watched ──
+    const watchedDates = done
+      .filter(m => m.watchedAt)
+      .map(m => m.watchedAt)
+      .sort((a,b) => b - a);
+
+    if (watchedDates.length) {
+      const last      = new Date(watchedDates[0]);
+      const today     = new Date();
+      today.setHours(0,0,0,0);
+      last.setHours(0,0,0,0);
+      const diffDays  = Math.round((today - last) / 86400000);
+      const lastStr   = last.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+
+      let icon, val, lbl, sub;
+      if (diffDays === 0) {
+        icon = '🔥'; val = 'Hoje!'; lbl = 'último filme assistido';
+        sub  = `Assistiram em ${lastStr}`;
+      } else if (diffDays === 1) {
+        icon = '😊'; val = '1 dia'; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr}`;
+      } else if (diffDays <= 7) {
+        icon = '🙂'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr}`;
+      } else if (diffDays <= 30) {
+        icon = '😬'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr} — tá na hora!`;
+      } else {
+        icon = '😱'; val = `${diffDays} dias`; lbl = 'sem assistir';
+        sub  = `Último: ${lastStr} — socorro!`;
+      }
+      document.getElementById('st-streak-icon').textContent = icon;
+      document.getElementById('st-streak-val').textContent  = val;
+      document.getElementById('st-streak-lbl').textContent  = lbl;
+      document.getElementById('st-streak-sub').textContent  = sub;
+      document.getElementById('st-streak-card') && (document.querySelector('.st-streak-card').style.display = 'flex');
+    } else {
+      document.getElementById('st-streak-icon').textContent = '🎬';
+      document.getElementById('st-streak-val').textContent  = '—';
+      document.getElementById('st-streak-lbl').textContent  = 'nenhum filme assistido ainda';
+      document.getElementById('st-streak-sub').textContent  = '';
+    }
 
     document.getElementById('main-screen').style.display     = 'none';
     document.getElementById('settings-screen').style.display = 'none';
