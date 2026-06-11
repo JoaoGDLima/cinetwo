@@ -2277,7 +2277,7 @@
   async function fetchRelated(tmdbId) {
     document.getElementById('related-wrap').style.display = 'none';
     try {
-      const res  = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/similar?api_key=${TMDB_KEY}&language=pt-BR&page=1`);
+      const res  = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/recommendations?api_key=${TMDB_KEY}&language=pt-BR&page=1`);
       const data = await res.json();
       const results = (data.results || []).filter(r => r.poster_path).slice(0, 10);
       if (!results.length) return;
