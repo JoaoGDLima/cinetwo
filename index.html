@@ -1553,7 +1553,7 @@
 
   // ─── state ───────────────────────────────────────────────
   let movies = {};
-  let settings = { pwd: 'M@nu!', names: { joao: 'João', ela: 'Manu' } };
+  let settings = { pwd: '', names: { joao: 'João', ela: 'Manu' } };
   let currentFilter = 'todos';
   let selectedWho = 'joao';
   let loggedIn = false;
@@ -1619,7 +1619,7 @@
     document.getElementById('pwd-input').value = saved;
     document.getElementById('remember-me').checked = true;
     // Tenta login com a senha salva vs senha atual das settings
-    if (saved === (settings.pwd || 'M@nu!')) {
+    if (saved === settings.pwd) {
       loggedIn = true;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-screen').style.display  = 'block';
@@ -1633,7 +1633,7 @@
 
   window.doLogin = function() {
     const val = document.getElementById('pwd-input').value;
-    if (val === (settings.pwd || 'M@nu!')) {
+    if (val === settings.pwd) {
       loggedIn = true;
       // Salvar ou limpar senha lembrada
       if (document.getElementById('remember-me').checked) {
@@ -1904,7 +1904,7 @@
     const n2   = document.getElementById('name2-in').value.trim();
     const npwd = document.getElementById('pwd-new').value.trim();
     const updated = {
-      pwd: npwd || settings.pwd || 'M@nu!',
+      pwd: npwd || settings.pwd || '',
       names: {
         joao: n1 || settings.names?.joao || 'João',
         ela:  n2 || settings.names?.ela  || 'Ela'
