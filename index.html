@@ -1763,8 +1763,13 @@
     if (!m) return;
     const nowDone = !m.done;
     const patch = { done: nowDone };
-    if (nowDone) patch.watchedAt = Date.now();
-    else         patch.watchedAt = null;
+    if (nowDone) {
+      // Use local midnight to avoid UTC timezone shift on display
+      const now = new Date();
+      patch.watchedAt = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    } else {
+      patch.watchedAt = null;
+    }
     await update(ref(db, `movies/${id}`), patch);
   };
 
@@ -2034,7 +2039,13 @@
     const m = movies[editingId];
     if (m && m.done) {
       const dateVal = document.getElementById('edit-watched-date').value;
-      updated.watchedAt = dateVal ? new Date(dateVal).getTime() : (m.watchedAt || null);
+      if (dateVal) {
+        // Parse as local date to avoid UTC timezone shift
+        const [y, mo, d] = dateVal.split('-').map(Number);
+        updated.watchedAt = new Date(y, mo - 1, d).getTime();
+      } else {
+        updated.watchedAt = m.watchedAt || null;
+      }
     }
 
     await update(ref(db, `movies/${editingId}`), updated);
