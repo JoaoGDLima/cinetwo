@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Cinetwo v3.2 -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -1227,6 +1228,35 @@
   }
   /* ═══════════════════════════════════════════════════════ */
 
+
+  /* GENRE FILTER ROW */
+  .genre-filters {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 0 14px 10px;
+    scrollbar-width: none;
+  }
+  .genre-filters::-webkit-scrollbar { display: none; }
+  .genre-filter-btn {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border2);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 12px; font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s;
+  }
+  .genre-filter-btn.active {
+    background: var(--indigo-lt);
+    border-color: var(--indigo);
+    color: var(--indigo);
+  }
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1483,6 +1513,8 @@
     <button class="btn-random" onclick="openMatchScreen()">💘 CineMatch</button>
     <button class="btn-random" onclick="openDiceModal()">🎲 Sortear</button>
   </div>
+
+  <div id="genre-filter-row" class="genre-filters" style="display:none;"></div>
 
   <div class="list-card">
     <div id="movie-list"><div class="loading">Carregando...</div></div>
@@ -1985,6 +2017,7 @@
   let movies = {};
   let settings = { pwd: '', names: { joao: 'João', ela: 'Manu' } };
   let currentFilter = 'todos';
+  let currentGenre  = '';
   let selectedWho = 'joao';
   let loggedIn = false;
 
@@ -2010,6 +2043,19 @@
   });
 
   // ─── helpers ─────────────────────────────────────────────
+  // ─── login photo ──────────────────────────────────────────
+  const PHOTO_KEY = 'login_photo';
+
+  function loadLoginPhoto() {
+    const photo = (settings && settings.photo) ? settings.photo : localStorage.getItem(PHOTO_KEY) || '';
+    const imgEl     = document.getElementById('login-photo-img');
+    const previewEl = document.getElementById('settings-photo-img');
+    if (imgEl)     imgEl.src     = photo;
+    if (previewEl) previewEl.src = photo;
+    const wrap = document.getElementById('login-photo-wrap');
+    if (wrap) wrap.style.display = photo ? 'block' : 'none';
+  }
+
   function applyNames() {
     loadLoginPhoto();
     const n = settings.names || {};
@@ -2252,6 +2298,32 @@
     renderList();
   };
 
+
+  // ─── genre filter ─────────────────────────────────────────
+  function buildGenreFilter() {
+    const all = Object.values(movies);
+    const genreSet = new Set();
+    all.forEach(m => { if (m.genre) genreSet.add(m.genre); });
+    const genres = Array.from(genreSet).sort();
+
+    const row = document.getElementById('genre-filter-row');
+    if (!genres.length) { row.style.display = 'none'; return; }
+
+    row.style.display = 'flex';
+    row.innerHTML = [
+      `<button class="genre-filter-btn ${currentGenre === '' ? 'active' : ''}" onclick="setGenreFilter(this,'')">Todos</button>`,
+      ...genres.map(g =>
+        `<button class="genre-filter-btn ${currentGenre === g ? 'active' : ''}" onclick="setGenreFilter(this,'${g.replace(/'/g,"\'")}'">${g}</button>`
+      )
+    ].join('');
+  }
+
+  window.setGenreFilter = function(el, genre) {
+    currentGenre = genre;
+    document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderList();
+  };
   // ─── who selector ─────────────────────────────────────────
   window.selectWho = function(who) {
     selectedWho = who;
@@ -2272,8 +2344,9 @@
       .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
 
     const filtered = all.filter(m => {
-      if (currentFilter === 'pendente')  return !m.done;
-      if (currentFilter === 'assistido') return m.done;
+      if (currentFilter === 'pendente'  && m.done)  return false;
+      if (currentFilter === 'assistido' && !m.done) return false;
+      if (currentGenre && m.genre !== currentGenre) return false;
       return true;
     });
 
@@ -2312,6 +2385,8 @@
         </div>
       </div>
     `).join('');
+
+    buildGenreFilter();
 
     // Para filmes sem ano, busca silenciosamente no TMDB e atualiza o card + banco
     filtered.forEach(m => {
@@ -2357,50 +2432,13 @@
     document.getElementById('name1-in').value = n.joao || '';
     document.getElementById('name2-in').value = n.ela  || '';
     document.getElementById('pwd-new').value  = '';
-    // ── streak: days since last watched ──
-    const watchedDates = done
-      .filter(m => m.watchedAt)
-      .map(m => m.watchedAt)
-      .sort((a,b) => b - a);
-
-    if (watchedDates.length) {
-      const last      = new Date(watchedDates[0]);
-      const today     = new Date();
-      today.setHours(0,0,0,0);
-      last.setHours(0,0,0,0);
-      const diffDays  = Math.round((today - last) / 86400000);
-      const lastStr   = last.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
-
-      let icon, val, lbl, sub;
-      if (diffDays === 0) {
-        icon = '🔥'; val = 'Hoje!'; lbl = 'último filme assistido';
-        sub  = `Assistiram em ${lastStr}`;
-      } else if (diffDays === 1) {
-        icon = '😊'; val = '1 dia'; lbl = 'sem assistir';
-        sub  = `Último: ${lastStr}`;
-      } else if (diffDays <= 7) {
-        icon = '🙂'; val = `${diffDays} dias`; lbl = 'sem assistir';
-        sub  = `Último: ${lastStr}`;
-      } else if (diffDays <= 30) {
-        icon = '😬'; val = `${diffDays} dias`; lbl = 'sem assistir';
-        sub  = `Último: ${lastStr} — tá na hora!`;
-      } else {
-        icon = '😱'; val = `${diffDays} dias`; lbl = 'sem assistir';
-        sub  = `Último: ${lastStr} — socorro!`;
-      }
-      document.getElementById('st-streak-icon').textContent = icon;
-      document.getElementById('st-streak-val').textContent  = val;
-      document.getElementById('st-streak-lbl').textContent  = lbl;
-      document.getElementById('st-streak-sub').textContent  = sub;
-      document.getElementById('st-streak-card') && (document.querySelector('.st-streak-card').style.display = 'flex');
-    } else {
-      document.getElementById('st-streak-icon').textContent = '🎬';
-      document.getElementById('st-streak-val').textContent  = '—';
-      document.getElementById('st-streak-lbl').textContent  = 'nenhum filme assistido ainda';
-      document.getElementById('st-streak-sub').textContent  = '';
-    }
-
-    document.getElementById('main-screen').style.display     = 'none';
+    // Sync dark toggle state
+    const dt = document.getElementById('dark-toggle');
+    if (dt) dt.checked = localStorage.getItem(DARK_KEY) === '1';
+    document.getElementById('fab-btn').style.display       = 'none';
+    closeAddModal();
+    document.getElementById('main-screen').style.display  = 'none';
+    document.getElementById('stats-screen').style.display = 'none';
     document.getElementById('settings-screen').style.display = 'block';
   };
 
@@ -3358,19 +3396,6 @@
   });
 
 
-  // ─── login photo ──────────────────────────────────────────
-  const PHOTO_KEY = 'login_photo';
-
-  function loadLoginPhoto() {
-    const photo = settings.photo || localStorage.getItem(PHOTO_KEY) || '';
-    const imgEl  = document.getElementById('login-photo-img');
-    const previewEl = document.getElementById('settings-photo-img');
-    if (imgEl)     imgEl.src     = photo;
-    if (previewEl) previewEl.src = photo;
-    // Show/hide based on whether photo exists
-    const wrap = document.getElementById('login-photo-wrap');
-    if (wrap) wrap.style.display = photo ? 'block' : 'none';
-  }
 
   window.handlePhotoUpload = function(event) {
     const file = event.target.files[0];
