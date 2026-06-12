@@ -2852,20 +2852,25 @@
 
     // Show user picker first
     const overlay = document.createElement('div');
+    overlay.id = 'match-user-picker';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;';
     overlay.innerHTML = `
       <div style="background:var(--bg);border-radius:20px;padding:2rem 1.5rem;width:86%;max-width:300px;text-align:center;">
         <div style="font-size:28px;margin-bottom:12px;">💘</div>
         <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:6px;">Quem é você?</div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Cada um avalia no próprio celular</div>
-        <button onclick="startMatch('joao');this.closest('div[style]').remove();" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--indigo);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">💜 ${escHtml(joaoName)}</button>
-        <button onclick="startMatch('ela');this.closest('div[style]').remove();" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--rose);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">🩷 ${escHtml(elaName)}</button>
-        <button onclick="this.closest('div[style]').remove();" style="width:100%;padding:11px;border-radius:99px;border:1.5px solid var(--border2);background:none;color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;">Cancelar</button>
+        <button onclick="document.getElementById('match-user-picker').remove();startMatch('joao');" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--indigo);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">💜 ${escHtml(joaoName)}</button>
+        <button onclick="document.getElementById('match-user-picker').remove();startMatch('ela');" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--rose);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">🩷 ${escHtml(elaName)}</button>
+        <button onclick="document.getElementById('match-user-picker').remove();" style="width:100%;padding:11px;border-radius:99px;border:1.5px solid var(--border2);background:none;color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;">Cancelar</button>
       </div>`;
     document.body.appendChild(overlay);
   };
 
   window.startMatch = function(user) {
+    // Remove picker overlay if still present
+    const picker = document.getElementById('match-user-picker');
+    if (picker) picker.remove();
+
     matchUser = user;
     const names = settings.names || {};
     const badge = document.getElementById('match-user-badge');
