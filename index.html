@@ -1257,6 +1257,83 @@
     color: var(--indigo);
   }
 
+
+  /* RATING POPUP */
+  .rating-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 170;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .rating-overlay.open { display: flex; }
+  .rating-sheet {
+    background: var(--bg);
+    border-radius: var(--radius) var(--radius) 0 0;
+    width: 100%; max-width: 480px;
+    padding: 20px 20px 32px;
+    animation: slideUp 0.22s ease;
+    text-align: center;
+  }
+  .rating-handle {
+    width: 36px; height: 4px;
+    background: var(--bg3); border-radius: 99px;
+    margin: 0 auto 16px;
+  }
+  .rating-title {
+    font-size: 16px; font-weight: 800;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .rating-subtitle {
+    font-size: 13px; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .stars-row {
+    display: flex; justify-content: center;
+    gap: 8px; margin-bottom: 18px;
+  }
+  .star-btn {
+    font-size: 36px; background: none;
+    border: none; cursor: pointer;
+    transition: transform 0.15s;
+    line-height: 1; padding: 2px;
+    opacity: 0.3;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .star-btn.lit   { opacity: 1; }
+  .star-btn:active { transform: scale(1.2); }
+  .rating-comment {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-xs);
+    border: 1.5px solid var(--border2);
+    background: var(--bg2);
+    font-size: 14px; color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    resize: none; outline: none;
+    margin-bottom: 14px;
+    box-sizing: border-box;
+  }
+  .rating-comment:focus { border-color: var(--accent); }
+  .rating-save-btn {
+    width: 100%; padding: 13px;
+    border-radius: 99px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer; margin-bottom: 8px;
+  }
+  .rating-skip-btn {
+    width: 100%; padding: 11px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border2);
+    background: none; color: var(--muted);
+    font-size: 14px; font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer;
+  }
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1829,6 +1906,25 @@
   </div>
 </div>
 
+<!-- RATING POPUP -->
+<div class="rating-overlay" id="rating-popup">
+  <div class="rating-sheet">
+    <div class="rating-handle"></div>
+    <div class="rating-title" id="rating-movie-title">Como foi o filme?</div>
+    <div class="rating-subtitle">Dá uma nota pra vocês lembrarem</div>
+    <div class="stars-row" id="stars-row">
+      <button class="star-btn" data-star="1">⭐</button>
+      <button class="star-btn" data-star="2">⭐</button>
+      <button class="star-btn" data-star="3">⭐</button>
+      <button class="star-btn" data-star="4">⭐</button>
+      <button class="star-btn" data-star="5">⭐</button>
+    </div>
+    <textarea class="rating-comment" id="rating-comment" rows="2" placeholder="Comentário rápido (opcional)..."></textarea>
+    <button class="rating-save-btn" onclick="saveRating()">Salvar avaliação</button>
+    <button class="rating-skip-btn" onclick="closeRatingPopup()">Pular</button>
+  </div>
+</div>
+
 <!-- DICE MODAL -->
 <div class="dice-overlay" id="dice-modal" onclick="closeDiceOnBg(event)">
   <div class="dice-box" id="dice-box">
@@ -1933,6 +2029,19 @@
             <img id="edit-cover-img" style="width:100%;height:100%;object-fit:cover;">
           </div>
         </div>
+      </div>
+
+      <div id="edit-rating-wrap" style="display:none;margin-bottom:12px;">
+        <label class="field-label">⭐ Avaliação</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px;" id="edit-stars-row">
+          <button class="star-btn" data-editstar="1">⭐</button>
+          <button class="star-btn" data-editstar="2">⭐</button>
+          <button class="star-btn" data-editstar="3">⭐</button>
+          <button class="star-btn" data-editstar="4">⭐</button>
+          <button class="star-btn" data-editstar="5">⭐</button>
+        </div>
+        <label class="field-label">💬 Comentário</label>
+        <input type="text" id="edit-comment" placeholder="Como foi o filme?">
       </div>
 
       <div id="edit-watched-wrap" style="display:none;margin-bottom:12px;">
@@ -2251,10 +2360,15 @@
         circle.addEventListener('animationend', () => circle.classList.remove('popping'), { once: true });
         spawnConfetti(circle);
       }
+      await update(ref(db, `movies/${id}`), patch);
+      // Show rating popup after short delay
+      setTimeout(() => openRatingPopup(id), 600);
     } else {
       patch.watchedAt = null;
+      patch.rating  = null;
+      patch.comment = null;
+      await update(ref(db, `movies/${id}`), patch);
     }
-    await update(ref(db, `movies/${id}`), patch);
   };
 
   function spawnConfetti(anchor) {
@@ -2389,6 +2503,8 @@
             ${m.genre ? `<span class="badge badge-genre">${escHtml(m.genre)}</span>` : ''}
             <span class="badge ${badgeClass[m.who] || 'badge-ambos'}">${escHtml(nameMap[m.who] || m.who)}</span>
             ${m.done && m.watchedAt ? `<span class="badge badge-genre" style="color:var(--green);background:var(--green-lt);">✓ ${new Date(m.watchedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>` : ''}
+            ${m.rating ? `<span class="badge badge-genre" style="color:#e65100;background:#fff8f0;">${'⭐'.repeat(m.rating)}</span>` : ''}
+            ${m.comment ? `<span class="badge badge-genre" style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.comment)}</span>` : ''}
           </div>
         </div>
       </div>
@@ -2497,6 +2613,29 @@
     editingYear   = m.year   || null;
 
     // watched date field — only show if movie is done
+    // Rating fields — only show if done
+    const ratingWrap = document.getElementById('edit-rating-wrap');
+    let editRating = m.rating || 0;
+    if (m.done) {
+      ratingWrap.style.display = 'block';
+      document.getElementById('edit-comment').value = m.comment || '';
+      // Init edit stars
+      const updateEditStars = (n) => {
+        document.querySelectorAll('[data-editstar]').forEach(b => {
+          b.classList.toggle('lit', parseInt(b.dataset.editstar) <= n);
+        });
+      };
+      updateEditStars(editRating);
+      document.querySelectorAll('[data-editstar]').forEach(btn => {
+        btn.onclick = function() {
+          editRating = parseInt(this.dataset.editstar);
+          updateEditStars(editRating);
+        };
+      });
+    } else {
+      ratingWrap.style.display = 'none';
+    }
+
     const watchedWrap = document.getElementById('edit-watched-wrap');
     const watchedInput = document.getElementById('edit-watched-date');
     if (m.done) {
@@ -2587,6 +2726,14 @@
     if (editingCover)  updated.cover  = editingCover;
     if (editingTmdbId) updated.tmdbId = editingTmdbId;
     if (editingYear)   updated.year   = editingYear;
+    // Save rating & comment if movie is done
+    const ratingWrapEl = document.getElementById('edit-rating-wrap');
+    if (ratingWrapEl && ratingWrapEl.style.display !== 'none') {
+      const editRatingVal = document.querySelectorAll('[data-editstar].lit').length;
+      const editCommentVal = document.getElementById('edit-comment').value.trim();
+      if (editRatingVal > 0) updated.rating  = editRatingVal;
+      if (editCommentVal)    updated.comment = editCommentVal;
+    }
 
     // save watched date if field is visible
     const m = movies[editingId];
@@ -3441,6 +3588,55 @@
   // Apply on load
   applyDark(localStorage.getItem(DARK_KEY) === '1');
 
+
+  // ─── rating popup ─────────────────────────────────────────
+  let ratingMovieId  = null;
+  let ratingSelected = 0;
+
+  window.openRatingPopup = function(id) {
+    const m = movies[id];
+    if (!m) return;
+    ratingMovieId  = id;
+    ratingSelected = m.rating || 0;
+
+    document.getElementById('rating-movie-title').textContent = m.title;
+    document.getElementById('rating-comment').value = m.comment || '';
+    updateStars(ratingSelected);
+    document.getElementById('rating-popup').classList.add('open');
+
+    // Star click handlers
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.onclick = function() {
+        ratingSelected = parseInt(this.dataset.star);
+        updateStars(ratingSelected);
+      };
+    });
+  };
+
+  function updateStars(n) {
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.classList.toggle('lit', parseInt(btn.dataset.star) <= n);
+    });
+  }
+
+  window.saveRating = async function() {
+    if (!ratingMovieId) return;
+    const comment = document.getElementById('rating-comment').value.trim();
+    const patch = {};
+    if (ratingSelected > 0) patch.rating  = ratingSelected;
+    if (comment)            patch.comment = comment;
+    if (Object.keys(patch).length) {
+      await update(ref(db, `movies/${ratingMovieId}`), patch);
+    }
+    closeRatingPopup();
+    showToast('⭐ Avaliação salva!');
+  };
+
+  window.closeRatingPopup = function() {
+    document.getElementById('rating-popup').classList.remove('open');
+    ratingMovieId  = null;
+    ratingSelected = 0;
+  };
   // ─── add movie modal ─────────────────────────────────────
   window.toggleAddModal = function() {
     const modal = document.getElementById('add-modal');
