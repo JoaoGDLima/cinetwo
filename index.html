@@ -2165,6 +2165,20 @@
         <div class="info-section-label">Onde assistir</div>
         <div class="streaming-wrap" id="streaming-list"></div>
       </div>
+      <div id="trailer-wrap" style="display:none;margin-bottom:14px;">
+        <div style="height:0.5px;background:var(--border);margin-bottom:12px;"></div>
+        <button id="trailer-btn" onclick="openTrailer()" style="
+          width:100%; padding:11px;
+          border-radius:var(--radius-xs);
+          border:1.5px solid #ff0000;
+          background:#fff0f0;
+          color:#cc0000;
+          font-size:14px; font-weight:800;
+          font-family:'Nunito',sans-serif;
+          cursor:pointer;
+          display:flex; align-items:center; justify-content:center; gap:8px;
+        ">▶ Assistir Trailer no YouTube</button>
+      </div>
       <div style="height:0.5px;background:var(--border);margin-bottom:12px;"></div>
       <div class="info-section-label">Sinopse</div>
       <div id="info-overview" style="font-size:13px;color:var(--text);line-height:1.65;max-height:160px;overflow-y:auto;"></div>
@@ -3001,10 +3015,40 @@
     }
 
     // Fetch streaming and related
-    if (d.id) { fetchStreaming(d.id); fetchRelated(d.id); }
+    if (d.id) { fetchStreaming(d.id); fetchRelated(d.id); fetchTrailer(d.id); }
   }
 
-  async function fetchStreaming(tmdbId) {
+  let trailerUrl = null;
+
+  async function fetchTrailer(tmdbId) {
+    trailerUrl = null;
+    document.getElementById('trailer-wrap').style.display = 'none';
+    try {
+      const res  = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${TMDB_KEY}&language=pt-BR`);
+      const data = await res.json();
+      let videos = data.results || [];
+
+      // Prefer pt-BR trailer, fallback to en-US
+      let trailer = videos.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+      if (!trailer) {
+        // Try English
+        const resEn  = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${TMDB_KEY}&language=en-US`);
+        const dataEn = await resEn.json();
+        trailer = (dataEn.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube');
+      }
+
+      if (trailer) {
+        trailerUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
+        document.getElementById('trailer-wrap').style.display = 'block';
+      }
+    } catch(e) {}
+  }
+
+  window.openTrailer = function() {
+    if (trailerUrl) window.open(trailerUrl, '_blank');
+  };
+
+    async function fetchStreaming(tmdbId) {
     document.getElementById('streaming-wrap').style.display = 'none';
     document.getElementById('streaming-list').innerHTML = '';
     try {
@@ -3110,6 +3154,8 @@
     document.getElementById('related-list').innerHTML        = '';
     document.getElementById('streaming-wrap').style.display  = 'none';
     document.getElementById('streaming-list').innerHTML      = '';
+    document.getElementById('trailer-wrap').style.display    = 'none';
+    trailerUrl = null;
     const posterEl = document.getElementById('info-poster');
     posterEl.innerHTML = m.cover
       ? `<img src="${m.cover}" style="width:100%;height:100%;object-fit:cover;">`
