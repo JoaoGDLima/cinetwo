@@ -1,42 +1,61 @@
 # 🎬 Cinetwo
----
+
 App de lista de filmes para casais. Adicione, organize e descubra filmes juntos — com sincronização em tempo real entre os dois celulares.
+
+---
 
 ## ✨ Funcionalidades
 
 ### 📋 Lista de filmes
-- Adicionar filmes com busca automática via TMDB (poster, gênero, ano)
-- Marcar filmes como assistidos com data registrada automaticamente
-- Filtros: Todos / Para assistir / Assistidos
-- Cards com poster, ano, gênero e quem indicou
+- Adicionar filmes com autocomplete via TMDB — poster, gênero e ano preenchidos automaticamente
+- Filtrar por status (Total / A ver / Vistos) clicando direto nos números do header
+- Filtrar por gênero com chips clicáveis (com emojis por gênero)
+- Marcar como assistido com animação de confete 🎊
+- Data registrada automaticamente ao marcar — editável depois
+- Avaliação ⭐ 1-5 e comentário curto após marcar como assistido
+- Notificação em tempo real quando o outro adiciona um filme
+- Confirmação antes de excluir
 
 ### 🎬 Informações do filme
-- Sinopse, nota TMDB, duração e gêneros
-- Onde assistir (streaming disponível no Brasil)
-- Filmes recomendados baseados no TMDB
+- Sinopse em português, nota TMDB, duração e gêneros
+- Onde assistir no Brasil (streaming, aluguel ou compra)
+- Trailer direto no YouTube
+- Filmes recomendados pelo TMDB com botão de adicionar direto
 
 ### 💘 CineMatch
 - Modo Tinder para filmes — cada um avalia no próprio celular
-- Desliza para direita ❤️ para curtir, para esquerda 👎 para pular
-- Quando os dois curtirem o mesmo filme: **É um Match!**
+- Arrastar para direita ❤️ para curtir, para esquerda 👎 para pular
+- Quando os dois curtirem o mesmo filme: popup de match
 - Notificação automática ao abrir o app se houver match pendente
 
 ### 🎲 Sorteio
-- Sorteia aleatoriamente um filme da lista de não assistidos
-- Animação de dado 3D ao sortear
+- Sorteia aleatoriamente um filme da lista de pendentes
+- Animação de dado 3D
+- Mostra poster, título, ano e quem indicou
 
 ### 📊 Estatísticas
-- Tempo total, assistido e a assistir estimados
-- Progresso da lista com anel animado
-- Contador de dias sem assistir
-- Ranking de quem indicou mais
+- Tempo total, já assistido e a assistir (estimado por gênero ou duração real)
+- Anel de progresso da lista
+- Contador de dias sem assistir com emoji progressivo
+- Ranking de quem indicou mais com avatares coloridos
 - Gêneros favoritos do casal
+
+### 📅 Histórico
+- Último filme assistido com poster, data, avaliação e comentário
+- Calendário mensal com os dias que assistiram filmes destacados
+- Toque num dia para ver quais filmes foram assistidos naquele dia
+
+### 📤 Compartilhar
+- Botão no action sheet para compartilhar qualquer filme via WhatsApp
+- Mensagem formatada com título, gênero, nota e quem indicou
 
 ### ⚙️ Configurações
 - Personalizar nomes dos dois
 - Alterar senha
+- Trocar a foto do casal na tela de login
 - Modo escuro
 - Instalar como app na tela inicial (PWA)
+- Apagar toda a lista
 
 ---
 
@@ -46,7 +65,7 @@ App de lista de filmes para casais. Adicione, organize e descubra filmes juntos 
 |---|---|
 | HTML / CSS / JS | Frontend — arquivo único |
 | Firebase Realtime Database | Sincronização em tempo real |
-| TMDB API | Informações, posters e recomendações de filmes |
+| TMDB API | Informações, posters, trailers e recomendações |
 | GitHub Pages | Hospedagem gratuita |
 
 ---
@@ -102,15 +121,12 @@ No **Android**: abra no Chrome → menu ⋮ → "Adicionar à tela inicial"
 
 No **iPhone**: abra no Safari → botão ⎙ → "Adicionar à Tela de Início"
 
----
+Ou acesse **Configurações ⚙️ → Instalar app** diretamente no Cinetwo para ver o passo a passo.
 
+---
 
 ## 🤝 Créditos
 
 Desenvolvido por [João Guilherme](https://github.com/joaogdlima) para uso pessoal do casal.
 
 Dados de filmes fornecidos pelo [TMDB](https://www.themoviedb.org).
-
----
-
-*Feito com ❤️ e muito debate sobre o que assistir hoje*
