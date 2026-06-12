@@ -892,6 +892,7 @@
   .action-icon-check  { background: var(--green-lt); }
   .action-icon-edit   { background: #fff3e0; }
   .action-icon-delete { background: var(--red-lt); }
+  .action-icon-share  { background: #e8f5e9; }
   .action-label { font-size: 15px; font-weight: 700; color: var(--text); }
   .action-label-delete { color: var(--red); }
   .action-sheet-cancel {
@@ -1876,6 +1877,10 @@
       <div class="action-icon action-icon-edit">✏️</div>
       <span class="action-label">Editar filme</span>
     </div>
+    <div class="action-row" onclick="asShare()">
+      <div class="action-icon" style="background:#e8f5e9;">📤</div>
+      <span class="action-label">Compartilhar no WhatsApp</span>
+    </div>
     <div class="action-row" onclick="asDelete()">
       <div class="action-icon action-icon-delete">🗑️</div>
       <span class="action-label action-label-delete">Remover da lista</span>
@@ -2516,7 +2521,7 @@
           <div class="movie-title ${m.done ? 'done' : ''}">${escHtml(m.title)}</div>
           <div class="movie-meta" id="meta-${m.id}">
             ${m.year  ? `<span class="badge badge-genre">${m.year}</span>` : ''}
-            ${m.genre ? `<span class="badge badge-genre">${escHtml(m.genre)}</span>` : ''}
+            ${m.genre ? `<span class="badge badge-genre">${genreEmoji(m.genre)} ${escHtml(m.genre)}</span>` : ''}
             <span class="badge ${badgeClass[m.who] || 'badge-ambos'}">${escHtml(nameMap[m.who] || m.who)}</span>
             ${m.done && m.watchedAt ? `<span class="badge badge-genre" style="color:var(--green);background:var(--green-lt);">✓ ${new Date(m.watchedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>` : ''}
             ${m.rating ? `<span class="badge badge-genre" style="color:#e65100;background:#fff8f0;">${'⭐'.repeat(m.rating)}</span>` : ''}
@@ -2805,6 +2810,18 @@
   }
 
   // TMDB genre_ids → genre names (most common)
+
+  // Genre → emoji map
+  const GENRE_EMOJI = {
+    'Ação':'⚔️','Aventura':'🗺️','Animação':'🎨','Comédia':'😂',
+    'Crime':'🔫','Doc.':'🎙️','Drama':'🎭','Família':'👨‍👩‍👧','Fantasia':'🧙',
+    'História':'📜','Terror':'👻','Música':'🎵','Mistério':'🔍',
+    'Romance':'❤️','Ficção':'🚀','Suspense':'😰','Guerra':'⚔️','Faroeste':'🤠'
+  };
+  function genreEmoji(genre) {
+    return GENRE_EMOJI[genre] || '🎬';
+  }
+
   const TMDB_GENRES = {
     28:'Ação',12:'Aventura',16:'Animação',35:'Comédia',80:'Crime',
     99:'Doc.',18:'Drama',10751:'Família',14:'Fantasia',36:'História',
@@ -3535,6 +3552,32 @@
     if (id) openEditModal(id);
   };
 
+
+  window.asShare = function() {
+    const id = actionMovieId;
+    document.getElementById('action-sheet').classList.remove('open');
+    actionMovieId = null;
+    if (!id) return;
+
+    const m = movies[id];
+    if (!m) return;
+
+    const emoji  = m.genre ? genreEmoji(m.genre) : '🎬';
+    const stars  = m.rating ? '⭐'.repeat(m.rating) : '';
+    const comment = m.comment ? `\n💬 _"${m.comment}"_` : '';
+    const year   = m.year   ? ` (${m.year})` : '';
+    const genre  = m.genre  ? `\n${emoji} ${m.genre}` : '';
+    const rating = stars    ? `\n${stars}` : '';
+    const status = m.done   ? '✅ Já assistimos!' : '🍿 Ainda na lista';
+
+    const names = settings.names || {};
+    const whoMap = { joao: names.joao || 'João', ela: names.ela || 'Manu', ambos: 'Ambos' };
+    const who = m.who ? `\n👤 Indicado por ${whoMap[m.who] || m.who}` : '';
+
+    const text = `🎬 *${m.title}*${year}${genre}${rating}${comment}${who}\n${status}`;
+    const url  = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
   window.asDelete = function() {
     const id = actionMovieId;
     document.getElementById('action-sheet').classList.remove('open');
