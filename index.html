@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cinetwo</title>
+<title>Cinetwo 3.2</title>
 <meta name="theme-color" content="#ff6b6b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2310,12 +2310,20 @@
     if (!genres.length) { row.style.display = 'none'; return; }
 
     row.style.display = 'flex';
-    row.innerHTML = [
-      `<button class="genre-filter-btn ${currentGenre === '' ? 'active' : ''}" onclick="setGenreFilter(this,'')">Todos</button>`,
-      ...genres.map(g =>
-        `<button class="genre-filter-btn ${currentGenre === g ? 'active' : ''}" onclick="setGenreFilter(this,'${g.replace(/'/g,"\'")}'">${g}</button>`
-      )
-    ].join('');
+
+    const btns = [{ label: 'Todos', value: '' }, ...genres.map(g => ({ label: g, value: g }))];
+    row.innerHTML = btns.map(b =>
+      '<button class="genre-filter-btn' + (currentGenre === b.value ? ' active' : '') + '" data-genre="' + escHtml(b.value) + '">' + escHtml(b.label) + '</button>'
+    ).join('');
+
+    row.querySelectorAll('.genre-filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        currentGenre = this.dataset.genre;
+        row.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderList();
+      });
+    });
   }
 
   window.setGenreFilter = function(el, genre) {
