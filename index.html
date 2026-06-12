@@ -1401,6 +1401,74 @@
   .new-stat-num { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
   .new-stat-lbl { font-size: 10px; color: rgba(255,255,255,0.75); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
 
+
+  /* CALENDAR */
+  .st-cal-wrap {
+    margin: 0 14px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+  .st-cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .st-cal-month {
+    font-size: 14px; font-weight: 800; color: var(--text);
+  }
+  .st-cal-nav {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; color: var(--muted); padding: 0 4px;
+    font-family: 'Nunito', sans-serif; line-height: 1;
+  }
+  .st-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .st-cal-dow {
+    font-size: 10px; font-weight: 800; color: var(--muted);
+    text-align: center; padding: 2px 0 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .st-cal-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    border-radius: 50%;
+    color: var(--muted);
+    cursor: default;
+    position: relative;
+  }
+  .st-cal-day.other { color: var(--bg3); }
+  .st-cal-day.today {
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+  }
+  .st-cal-day.watched {
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .st-cal-day.watched:active { opacity: 0.8; }
+  .st-cal-dot {
+    position: absolute;
+    bottom: 1px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%;
+    background: #fff;
+  }
+  .st-cal-tooltip {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--bg2);
+    border-radius: 10px;
+    font-size: 12px; color: var(--text);
+    line-height: 1.5;
+    display: none;
+  }
+  .st-cal-tooltip.show { display: block; }
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1760,6 +1828,18 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- calendar -->
+  <div class="st-section">📅 Calendário de assistidos</div>
+  <div class="st-cal-wrap">
+    <div class="st-cal-header">
+      <button class="st-cal-nav" onclick="calPrev()">‹</button>
+      <div class="st-cal-month" id="cal-month-label"></div>
+      <button class="st-cal-nav" onclick="calNext()">›</button>
+    </div>
+    <div class="st-cal-grid" id="cal-grid"></div>
+    <div class="st-cal-tooltip" id="cal-tooltip"></div>
   </div>
 
   <div style="height:1.5rem;"></div>
@@ -3863,6 +3943,99 @@
     ratingMovieId  = null;
     ratingSelected = 0;
   };
+
+  // ─── calendar ─────────────────────────────────────────────
+  let calYear  = new Date().getFullYear();
+  let calMonth = new Date().getMonth(); // 0-indexed
+
+  const CAL_MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                          'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const CAL_DAYS_PT   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+  function buildCalendar() {
+    const label   = document.getElementById('cal-month-label');
+    const grid    = document.getElementById('cal-grid');
+    const tooltip = document.getElementById('cal-tooltip');
+    if (!label || !grid) return;
+
+    label.textContent = `${CAL_MONTHS_PT[calMonth]} ${calYear}`;
+    tooltip.classList.remove('show');
+
+    // Build map: "YYYY-MM-DD" → [movie titles]
+    const watchedMap = {};
+    Object.values(movies).forEach(m => {
+      if (m.done && m.watchedAt) {
+        const d   = new Date(m.watchedAt);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!watchedMap[key]) watchedMap[key] = [];
+        watchedMap[key].push(m.title);
+      }
+    });
+
+    const today     = new Date();
+    const firstDay  = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+    const prevDays  = new Date(calYear, calMonth, 0).getDate();
+
+    let html = CAL_DAYS_PT.map(d => `<div class="st-cal-dow">${d}</div>`).join('');
+
+    // Prev month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      html += `<div class="st-cal-day other">${prevDays - i}</div>`;
+    }
+
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const isToday   = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===day;
+      const isWatched = !!watchedMap[key];
+      const count     = isWatched ? watchedMap[key].length : 0;
+      const cls = ['st-cal-day', isToday?'today':'', isWatched?'watched':''].filter(Boolean).join(' ');
+      const dot = isWatched && count > 1 ? '<div class="st-cal-dot"></div>' : '';
+      const onclick = isWatched ? `calShowTooltip('${key}')` : '';
+      html += `<div class="${cls}" ${onclick ? `onclick="${onclick}"` : ''}>${day}${dot}</div>`;
+    }
+
+    // Next month days
+    const total = firstDay + daysInMonth;
+    const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let i = 1; i <= remaining; i++) {
+      html += `<div class="st-cal-day other">${i}</div>`;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  window.calShowTooltip = function(key) {
+    const tooltip = document.getElementById('cal-tooltip');
+    const watchedMap = {};
+    Object.values(movies).forEach(m => {
+      if (m.done && m.watchedAt) {
+        const d   = new Date(m.watchedAt);
+        const k   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!watchedMap[k]) watchedMap[k] = [];
+        watchedMap[k].push(m);
+      }
+    });
+    const entries = watchedMap[key] || [];
+    if (!entries.length) return;
+    tooltip.innerHTML = entries.map(m => {
+      const stars = m.rating ? '⭐'.repeat(m.rating) : '';
+      return `<div style="margin-bottom:4px;"><strong>${escHtml(m.title)}</strong>${stars ? ' ' + stars : ''}${m.comment ? `<br><em style="color:var(--muted)">"${escHtml(m.comment)}"</em>` : ''}</div>`;
+    }).join('');
+    tooltip.classList.add('show');
+  };
+
+  window.calPrev = function() {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    buildCalendar();
+  };
+  window.calNext = function() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    buildCalendar();
+  };
   // ─── add movie modal ─────────────────────────────────────
   window.toggleAddModal = function() {
     const modal = document.getElementById('add-modal');
@@ -4049,6 +4222,11 @@
     } else {
       motmWrap.style.display = 'none';
     }
+
+    // reset calendar to current month
+    calYear  = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+    buildCalendar();
 
     document.getElementById('main-screen').style.display     = 'none';
     document.getElementById('settings-screen').style.display = 'none';
