@@ -1,7 +1,6 @@
 # 🎬 Cinetwo
-
-App de lista de filmes para casais. Adicione, organize e descubra filmes juntos — com sincronização em tempo real entre os dois celulares.
 ---
+App de lista de filmes para casais. Adicione, organize e descubra filmes juntos — com sincronização em tempo real entre os dois celulares.
 
 ## ✨ Funcionalidades
 
