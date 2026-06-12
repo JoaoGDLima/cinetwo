@@ -2944,60 +2944,77 @@
   }
 
   function setupCardDrag(card) {
-    const onStart = (x) => { matchDragStart = x; matchDragX = 0; };
-    const onMove  = (x) => {
-      if (matchDragStart === null) return;
-      matchDragX = x - matchDragStart;
-      const rot  = matchDragX * 0.08;
-      card.style.transform   = `translateX(${matchDragX}px) rotate(${rot}deg)`;
-      card.style.transition  = 'none';
-      const likeEl  = document.getElementById('stamp-like');
-      const nopeEl  = document.getElementById('stamp-nope');
-      if (matchDragX > 30)       { likeEl.style.opacity = Math.min((matchDragX-30)/60, 1); nopeEl.style.opacity = 0; }
-      else if (matchDragX < -30) { nopeEl.style.opacity = Math.min((-matchDragX-30)/60, 1); likeEl.style.opacity = 0; }
-      else                       { likeEl.style.opacity = 0; nopeEl.style.opacity = 0; }
-    };
-    const onEnd   = () => {
-      if (matchDragStart === null) return;
-      matchDragStart = null;
-      if      (matchDragX >  80) swipeCard('like');
-      else if (matchDragX < -80) swipeCard('nope');
-      else {
-        card.style.transition = 'transform 0.3s cubic-bezier(.34,1.56,.64,1)';
-        card.style.transform  = '';
-        document.getElementById('stamp-like').style.opacity = 0;
-        document.getElementById('stamp-nope').style.opacity = 0;
-      }
-    };
+    let startX = 0, startY = 0, curX = 0, dragging = false;
 
-    // Touch
-    card.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
-    card.addEventListener('touchmove',  e => onMove(e.touches[0].clientX),  { passive: true });
-    card.addEventListener('touchend',   () => onEnd());
-    // Mouse
-    card.addEventListener('mousedown',  e => onStart(e.clientX));
-    window.addEventListener('mousemove', e => { if (matchDragStart !== null) onMove(e.clientX); });
-    window.addEventListener('mouseup',   () => onEnd());
+    function onDown(e) {
+      e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      startX  = pt.clientX;
+      startY  = pt.clientY;
+      curX    = 0;
+      dragging = true;
+      card.style.transition = 'none';
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      curX = pt.clientX - startX;
+      const rot = curX * 0.07;
+      card.style.transform = `translateX(${curX}px) rotate(${rot}deg)`;
+
+      const likeEl = card.querySelector('.match-stamp-like');
+      const nopeEl = card.querySelector('.match-stamp-nope');
+      if (curX > 20)       { likeEl.style.opacity = Math.min((curX - 20) / 80, 1); nopeEl.style.opacity = 0; }
+      else if (curX < -20) { nopeEl.style.opacity = Math.min((-curX - 20) / 80, 1); likeEl.style.opacity = 0; }
+      else                 { likeEl.style.opacity = 0; nopeEl.style.opacity = 0; }
+    }
+
+    function onUp(e) {
+      if (!dragging) return;
+      dragging = false;
+      const likeEl = card.querySelector('.match-stamp-like');
+      const nopeEl = card.querySelector('.match-stamp-nope');
+      likeEl.style.opacity = 0;
+      nopeEl.style.opacity = 0;
+
+      if      (curX >  90) { swipeCard('like'); }
+      else if (curX < -90) { swipeCard('nope'); }
+      else {
+        card.style.transition = 'transform 0.35s cubic-bezier(.34,1.56,.64,1)';
+        card.style.transform  = '';
+      }
+    }
+
+    // Touch events
+    card.addEventListener('touchstart', onDown, { passive: false });
+    card.addEventListener('touchmove',  onMove, { passive: false });
+    card.addEventListener('touchend',   onUp);
+    card.addEventListener('touchcancel',onUp);
+
+    // Mouse events
+    card.addEventListener('mousedown', onDown);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   }
 
   window.swipeCard = function(dir) {
     const card = document.getElementById('match-active-card');
     if (!card) return;
 
-    const flyX = dir === 'like' ? 600 : -600;
-    card.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+    const flyX = dir === 'like' ? 700 : -700;
+    card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
     card.style.transform  = `translateX(${flyX}px) rotate(${dir === 'like' ? 20 : -20}deg)`;
     card.style.opacity    = '0';
 
-    // Store vote locally
-    const id = matchCurrentId;
     if (!matchVotes) matchVotes = {};
-    matchVotes[id] = (dir === 'like');
+    matchVotes[matchCurrentId] = (dir === 'like');
 
     setTimeout(() => {
       matchIndex++;
       renderMatchCard();
-    }, 350);
+    }, 300);
   };
 
   let matchVotes = {};
