@@ -1901,7 +1901,7 @@
 
 <!-- INFO MODAL -->
 <div class="modal-overlay" id="info-modal" onclick="closeInfoModal(event)">
-  <div class="modal-sheet" style="padding:0;overflow:hidden;">
+  <div class="modal-sheet" style="padding:0;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0);">
     <div class="info-handle"></div>
     <div class="info-hero">
       <div class="info-hero-bg"></div>
@@ -1910,7 +1910,7 @@
         <div class="info-hero-title" id="info-title">Sobre o filme</div>
         <div class="info-hero-pills" id="info-meta"></div>
       </div>
-      <button class="modal-close" onclick="closeInfoModal()" style="position:absolute;top:10px;right:12px;z-index:3;background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.2);color:#fff;">✕</button>
+      <button class="modal-close" onclick="closeInfoModal()" style="position:absolute;top:max(10px,env(safe-area-inset-top,10px));right:12px;z-index:3;background:rgba(0,0,0,0.3);border-color:rgba(255,255,255,0.2);color:#fff;">✕</button>
     </div>
     <div class="info-body">
       <div id="info-rating" style="display:none;" class="info-rating-card">
@@ -2334,6 +2334,7 @@
 
   // ─── settings ────────────────────────────────────────────
   window.showSettings = function() {
+    pushHistory('settings');
     const n = settings.names || {};
     document.getElementById('name1-in').value = n.joao || '';
     document.getElementById('name2-in').value = n.ela  || '';
@@ -2424,6 +2425,7 @@
   window.openEditModal = function(id) {
     const m = movies[id];
     if (!m) return;
+    pushHistory('edit-modal');
     editingId     = id;
     editingCover  = m.cover  || null;
     editingWho    = m.who    || 'joao';
@@ -2754,6 +2756,7 @@
   window.openInfoModal = async function(id) {
     const m = movies[id];
     if (!m) return;
+    pushHistory('info-modal');
     const modal = document.getElementById('info-modal');
     modal.classList.add('open');
 
@@ -2882,6 +2885,7 @@
   };
 
   window.startMatch = function(user) {
+    pushHistory('match');
     // Remove picker overlay if still present
     const picker = document.getElementById('match-user-picker');
     if (picker) picker.remove();
@@ -3303,6 +3307,29 @@
   };
 
 
+
+  // ─── Hardware back button (Android) ──────────────────────
+  function pushHistory(state) {
+    history.pushState({ screen: state }, '');
+  }
+
+  window.addEventListener('popstate', function(e) {
+    const state = e.state && e.state.screen;
+
+    // Close any open modal first
+    if (document.getElementById('info-modal').classList.contains('open'))   { closeInfoModal(); return; }
+    if (document.getElementById('edit-modal').classList.contains('open'))   { closeEditModal(); return; }
+    if (document.getElementById('add-modal').classList.contains('open'))    { closeAddModal();  return; }
+    if (document.getElementById('action-sheet').classList.contains('open')) { closeActionSheet(); return; }
+    if (document.getElementById('dice-modal').classList.contains('open'))   { closeDiceModal(); return; }
+    if (document.getElementById('install-modal').classList.contains('open')){ closeInstallModal(); return; }
+
+    // Navigate screens
+    if (document.getElementById('match-screen').style.display === 'flex')  { closeMatchScreen(); return; }
+    if (document.getElementById('settings-screen').style.display === 'block') { showMain(); return; }
+    if (document.getElementById('stats-screen').style.display === 'block')    { showMain(); return; }
+  });
+
   // ─── dark mode ───────────────────────────────────────────
   const DARK_KEY = 'cinetwo_dark';
 
@@ -3333,6 +3360,7 @@
       modal.classList.remove('open');
       fab.classList.remove('open');
     } else {
+      pushHistory('add-modal');
       modal.classList.add('open');
       fab.classList.add('open');
       setTimeout(() => document.getElementById('movie-input').focus(), 200);
@@ -3372,6 +3400,7 @@
   }
 
   window.showStats = function() {
+    pushHistory('stats');
     document.getElementById('fab-btn').style.display = 'none';
     closeAddModal();
     const names   = settings.names || {};
