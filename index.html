@@ -1708,6 +1708,7 @@
         <div class="new-header-sub" id="top-sub">Lista do casal</div>
       </div>
       <div style="display:flex;gap:6px;">
+        <button class="icon-btn new-header-icon-btn" onclick="showCalendar()" title="Calendário">📅</button>
         <button class="icon-btn new-header-icon-btn" onclick="showStats()" title="Estatísticas">📊</button>
         <button class="icon-btn new-header-icon-btn" onclick="showSettings()" title="Configurações">⚙️</button>
         <button class="icon-btn new-header-icon-btn" onclick="doLogout()" title="Sair">🚪</button>
@@ -1815,7 +1816,18 @@
   <div class="st-genres-wrap" id="st-genres"></div>
 
   <!-- movie of the month -->
-  <div id="st-motm-wrap" style="display:none;">
+  <div style="height:1.5rem;"></div>
+</div>
+
+<!-- CALENDAR SCREEN -->
+<div id="calendar-screen" style="display:none;max-width:480px;margin:0 auto;padding:0 0 3rem;">
+  <div class="settings-header">
+    <button class="back-btn" onclick="showMain()">←</button>
+    <h1>📅 Histórico</h1>
+  </div>
+
+  <!-- último assistido -->
+  <div id="cal-motm-wrap" style="display:none;margin-bottom:4px;">
     <div class="st-section">🎬 Último assistido</div>
     <div style="margin:0 14px;background:var(--bg);border:0.5px solid var(--border);border-radius:16px;overflow:hidden;">
       <div style="display:flex;gap:14px;padding:14px;">
@@ -1831,7 +1843,7 @@
   </div>
 
   <!-- calendar -->
-  <div class="st-section">📅 Calendário de assistidos</div>
+  <div class="st-section">Calendário de assistidos</div>
   <div class="st-cal-wrap">
     <div class="st-cal-header">
       <button class="st-cal-nav" onclick="calPrev()">‹</button>
@@ -2803,8 +2815,9 @@
   };
 
   window.showMain = function() {
-    document.getElementById('settings-screen').style.display = 'none';
-    document.getElementById('stats-screen').style.display    = 'none';
+    document.getElementById('settings-screen').style.display  = 'none';
+    document.getElementById('stats-screen').style.display     = 'none';
+    document.getElementById('calendar-screen').style.display  = 'none';
     document.getElementById('fab-btn').style.display         = 'block';
     document.getElementById('main-screen').style.display     = 'block';
   };
@@ -3854,6 +3867,7 @@
     if (document.getElementById('match-screen').style.display === 'flex')  { closeMatchScreen(); return; }
     if (document.getElementById('settings-screen').style.display === 'block') { showMain(); return; }
     if (document.getElementById('stats-screen').style.display === 'block')    { showMain(); return; }
+    if (document.getElementById('calendar-screen').style.display === 'block')  { showMain(); return; }
   });
 
 
@@ -3944,6 +3958,55 @@
     ratingSelected = 0;
   };
 
+
+  // ─── calendar screen ──────────────────────────────────────
+  window.showCalendar = function() {
+    pushHistory('calendar');
+    document.getElementById('fab-btn').style.display        = 'none';
+    closeAddModal();
+    document.getElementById('main-screen').style.display   = 'none';
+    document.getElementById('stats-screen').style.display  = 'none';
+    document.getElementById('settings-screen').style.display = 'none';
+    document.getElementById('calendar-screen').style.display = 'block';
+
+    // Build last watched
+    const all     = Object.values(movies);
+    const done    = all.filter(m => m.done);
+    const lastWatched = done
+      .filter(m => m.watchedAt)
+      .sort((a, b) => (b.watchedAt || 0) - (a.watchedAt || 0))[0];
+
+    const motmWrap = document.getElementById('cal-motm-wrap');
+    if (lastWatched) {
+      motmWrap.style.display = 'block';
+      const posterEl = document.getElementById('st-motm-poster');
+      posterEl.innerHTML = lastWatched.cover
+        ? `<img src="${lastWatched.cover}" style="width:100%;height:100%;object-fit:cover;">`
+        : '🎬';
+      document.getElementById('st-motm-title').textContent = lastWatched.title;
+      const names  = settings.names || {};
+      const nameMap = { joao: names.joao || 'João', ela: names.ela || 'Manu', ambos: 'Ambos' };
+      const datStr = lastWatched.watchedAt
+        ? new Date(lastWatched.watchedAt).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'})
+        : '';
+      const who = nameMap[lastWatched.who] || lastWatched.who || '';
+      document.getElementById('st-motm-meta').textContent = [datStr, who ? `Indicado por ${who}` : ''].filter(Boolean).join(' · ');
+      const ratingEl = document.getElementById('st-motm-rating');
+      if (lastWatched.rating) {
+        ratingEl.style.display = 'block';
+        ratingEl.textContent   = '⭐'.repeat(lastWatched.rating);
+      } else {
+        ratingEl.style.display = 'none';
+      }
+      document.getElementById('st-motm-comment').textContent = lastWatched.comment ? `"${lastWatched.comment}"` : '';
+    } else {
+      motmWrap.style.display = 'none';
+    }
+
+    calYear  = new Date().getFullYear();
+    calMonth = new Date().getMonth();
+    buildCalendar();
+  };
   // ─── calendar ─────────────────────────────────────────────
   let calYear  = new Date().getFullYear();
   let calMonth = new Date().getMonth(); // 0-indexed
@@ -4086,7 +4149,8 @@
 
   window.showStats = function() {
     pushHistory('stats');
-    document.getElementById('fab-btn').style.display = 'none';
+    document.getElementById('fab-btn').style.display          = 'none';
+    document.getElementById('calendar-screen').style.display  = 'none';
     closeAddModal();
     const names   = settings.names || {};
     const nameMap = { joao: names.joao || 'João', ela: names.ela || 'Manu', ambos: 'Ambos' };
@@ -4179,54 +4243,6 @@
       document.getElementById('st-streak-lbl').textContent  = 'nenhum filme assistido ainda';
       document.getElementById('st-streak-sub').textContent  = '';
     }
-
-    // ── movie of the month: last watched ──
-    const lastWatched = done
-      .filter(m => m.watchedAt)
-      .sort((a, b) => (b.watchedAt || 0) - (a.watchedAt || 0))[0];
-
-    const motmWrap = document.getElementById('st-motm-wrap');
-    if (lastWatched) {
-      motmWrap.style.display = 'block';
-
-      // poster
-      const posterEl = document.getElementById('st-motm-poster');
-      posterEl.innerHTML = lastWatched.cover
-        ? `<img src="${lastWatched.cover}" style="width:100%;height:100%;object-fit:cover;">`
-        : '🎬';
-
-      // title
-      document.getElementById('st-motm-title').textContent = lastWatched.title;
-
-      // meta: date + who
-      const names  = settings.names || {};
-      const nameMap = { joao: names.joao || 'João', ela: names.ela || 'Manu', ambos: 'Ambos' };
-      const datStr = lastWatched.watchedAt
-        ? new Date(lastWatched.watchedAt).toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'})
-        : '';
-      const who = nameMap[lastWatched.who] || lastWatched.who || '';
-      document.getElementById('st-motm-meta').textContent = [datStr, who ? `Indicado por ${who}` : ''].filter(Boolean).join(' · ');
-
-      // rating
-      const ratingEl = document.getElementById('st-motm-rating');
-      if (lastWatched.rating) {
-        ratingEl.style.display = 'block';
-        ratingEl.textContent   = '⭐'.repeat(lastWatched.rating);
-      } else {
-        ratingEl.style.display = 'none';
-      }
-
-      // comment
-      const commentEl = document.getElementById('st-motm-comment');
-      commentEl.textContent = lastWatched.comment ? `"${lastWatched.comment}"` : '';
-    } else {
-      motmWrap.style.display = 'none';
-    }
-
-    // reset calendar to current month
-    calYear  = new Date().getFullYear();
-    calMonth = new Date().getMonth();
-    buildCalendar();
 
     document.getElementById('main-screen').style.display     = 'none';
     document.getElementById('settings-screen').style.display = 'none';
