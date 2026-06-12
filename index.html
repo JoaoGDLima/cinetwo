@@ -403,6 +403,24 @@
     margin-top: 4px;
     flex-wrap: wrap;
   }
+  .movie-meta-row2 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 3px;
+  }
+  .badge-date {
+    font-size: 11px; font-weight: 700;
+    color: var(--green); background: var(--green-lt);
+    padding: 1px 7px; border-radius: 99px;
+    white-space: nowrap;
+  }
+  .badge-comment {
+    font-size: 11px; color: var(--muted); font-style: italic;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 130px;
+  }
 
   .badge {
     font-size: 11px;
@@ -2619,7 +2637,13 @@
       return;
     }
 
-    container.innerHTML = filtered.map(m => `
+    container.innerHTML = filtered.map(m => {
+      const watchedStr = m.done && m.watchedAt
+        ? new Date(m.watchedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})
+        : '';
+      const row2 = (watchedStr || m.rating || m.comment) && m.done;
+
+      return `
       <div class="movie-item" id="item-${m.id}" onclick="openActionSheet('${m.id}')">
         <div class="item-bar ${barClass[m.who] || 'bar-ambos'}"></div>
         ${m.cover
@@ -2632,13 +2656,15 @@
             ${m.year  ? `<span class="badge badge-genre">${m.year}</span>` : ''}
             ${m.genre ? `<span class="badge badge-genre">${genreEmoji(m.genre)} ${escHtml(m.genre)}</span>` : ''}
             <span class="badge ${badgeClass[m.who] || 'badge-ambos'}">${escHtml(nameMap[m.who] || m.who)}</span>
-            ${m.done && m.watchedAt ? `<span class="badge badge-genre" style="color:var(--green);background:var(--green-lt);">✓ ${new Date(m.watchedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>` : ''}
-            ${m.rating ? `<span class="badge badge-genre" style="color:#e65100;background:#fff8f0;">${'⭐'.repeat(m.rating)}</span>` : ''}
-            ${m.comment ? `<span class="badge badge-genre" style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(m.comment)}</span>` : ''}
           </div>
+          ${row2 ? `<div class="movie-meta-row2">
+            ${watchedStr ? `<span class="badge-date">✓ ${watchedStr}</span>` : ''}
+            ${m.rating   ? `<span style="font-size:11px;letter-spacing:-1px;">${'⭐'.repeat(m.rating)}</span>` : ''}
+            ${m.comment  ? `<span class="badge-comment">"${escHtml(m.comment)}"</span>` : ''}
+          </div>` : ''}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     buildGenreFilter();
 
