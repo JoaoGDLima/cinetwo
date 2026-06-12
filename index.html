@@ -1032,6 +1032,201 @@
   .st-streak-lbl  { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
   .st-streak-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
+
+  /* ═══ CINEMATCH ═══════════════════════════════════════════ */
+  #match-screen {
+    display: none;
+    position: fixed; inset: 0;
+    background: var(--bg2);
+    z-index: 130;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .match-topbar {
+    width: 100%; max-width: 480px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .match-logo {
+    font-size: 16px; font-weight: 800; color: var(--accent);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .match-user-badge {
+    font-size: 12px; font-weight: 700;
+    padding: 4px 12px; border-radius: 99px;
+    background: var(--indigo-lt); color: var(--indigo);
+  }
+  .match-user-badge.ela { background: var(--rose-lt); color: var(--rose); }
+
+  /* card stack */
+  .match-stack {
+    flex: 1; width: 100%; max-width: 480px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    overflow: hidden;
+  }
+
+  .match-card {
+    position: absolute;
+    width: calc(100% - 32px); max-width: 380px;
+    background: var(--bg);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    transition: box-shadow 0.15s;
+  }
+  .match-card:active { cursor: grabbing; }
+  .match-card-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    display: block;
+    background: var(--bg3);
+  }
+  .match-card-poster-ph {
+    width: 100%; aspect-ratio: 2/3;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px;
+  }
+  .match-card-info {
+    padding: 14px 16px 18px;
+  }
+  .match-card-title {
+    font-size: 20px; font-weight: 800; color: var(--text);
+    margin-bottom: 6px; line-height: 1.2;
+  }
+  .match-card-meta {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .match-card-overview {
+    font-size: 12px; color: var(--muted); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* like / nope stamps */
+  .match-stamp {
+    position: absolute; top: 28px;
+    font-size: 28px; font-weight: 900;
+    padding: 6px 14px; border-radius: 8px;
+    border: 4px solid;
+    opacity: 0;
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    transition: opacity 0.1s;
+  }
+  .match-stamp-like {
+    left: 20px;
+    color: #14b8a6; border-color: #14b8a6;
+    transform: rotate(-15deg);
+  }
+  .match-stamp-nope {
+    right: 20px;
+    color: #ef4444; border-color: #ef4444;
+    transform: rotate(15deg);
+  }
+
+  /* action buttons */
+  .match-actions {
+    width: 100%; max-width: 480px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 20px; padding: 12px 16px 28px;
+    background: var(--bg);
+    border-top: 0.5px solid var(--border);
+  }
+  .match-btn {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    transition: transform 0.12s, box-shadow 0.12s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .match-btn:active { transform: scale(0.9); }
+  .match-btn-nope { background: #fff1f0; }
+  .match-btn-like { background: #f0fdfb; }
+  .match-btn-back { background: var(--bg2); width: 44px; height: 44px; font-size: 18px; }
+
+  /* progress */
+  .match-progress {
+    font-size: 11px; font-weight: 700; color: var(--muted);
+    text-align: center; padding: 6px 0 0;
+    width: 100%; max-width: 480px;
+  }
+
+  /* waiting screen */
+  .match-waiting {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem; text-align: center;
+    width: 100%; max-width: 480px;
+  }
+  .match-waiting-icon { font-size: 56px; margin-bottom: 1rem; }
+  .match-waiting-title { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .match-waiting-sub   { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  /* MATCH popup */
+  .match-popup-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .match-popup-overlay.open { display: flex; }
+  .match-popup {
+    background: var(--bg);
+    border-radius: 24px;
+    padding: 2rem 1.5rem;
+    width: 88%; max-width: 320px;
+    text-align: center;
+    animation: popIn 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .match-popup-hearts { font-size: 40px; margin-bottom: 8px; letter-spacing: 4px; }
+  .match-popup-title  { font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+  .match-popup-sub    { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .match-popup-poster {
+    width: 100px; height: 150px;
+    border-radius: 12px; object-fit: cover;
+    margin: 0 auto 12px; display: block;
+    border: 2px solid var(--border2);
+  }
+  .match-popup-poster-ph {
+    width: 100px; height: 150px;
+    border-radius: 12px;
+    background: var(--bg3);
+    margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+  }
+  .match-popup-movie  { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .match-popup-year   { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .match-popup-btn {
+    width: 100%; padding: 13px;
+    border-radius: 99px; border: none;
+    background: var(--accent); color: #fff;
+    font-size: 15px; font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer; margin-bottom: 8px;
+  }
+  .match-popup-btn-sec {
+    width: 100%; padding: 11px;
+    border-radius: 99px;
+    border: 1.5px solid var(--border2);
+    background: none; color: var(--muted);
+    font-size: 14px; font-weight: 700;
+    font-family: 'Nunito', sans-serif; cursor: pointer;
+  }
+  /* ═══════════════════════════════════════════════════════ */
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1285,6 +1480,7 @@
     <button class="filter-btn active" onclick="setFilter(this,'todos')">Todos</button>
     <button class="filter-btn" onclick="setFilter(this,'pendente')">Para assistir</button>
     <button class="filter-btn" onclick="setFilter(this,'assistido')">Assistidos</button>
+    <button class="btn-random" onclick="openMatchScreen()">💘 CineMatch</button>
     <button class="btn-random" onclick="openDiceModal()">🎲 Sortear</button>
   </div>
 
@@ -1543,6 +1739,44 @@
       <span class="action-label action-label-delete">Remover da lista</span>
     </div>
     <button class="action-sheet-cancel" onclick="closeActionSheet()">Cancelar</button>
+  </div>
+</div>
+
+<!-- CINEMATCH SCREEN -->
+<div id="match-screen" style="display:none;flex-direction:column;align-items:center;">
+
+  <div class="match-topbar">
+    <button class="back-btn" onclick="closeMatchScreen()" style="margin:0;">←</button>
+    <div class="match-logo">💘 CineMatch</div>
+    <div class="match-user-badge" id="match-user-badge">João</div>
+  </div>
+  <div class="match-progress" id="match-progress"></div>
+
+  <!-- card stack -->
+  <div class="match-stack" id="match-stack">
+    <div style="text-align:center;color:var(--muted);font-size:14px;" id="match-empty" style="display:none;">
+      Sem filmes na lista 🍿
+    </div>
+  </div>
+
+  <!-- actions -->
+  <div class="match-actions">
+    <button class="match-btn match-btn-nope" onclick="swipeCard('nope')" title="Pular">👎</button>
+    <button class="match-btn match-btn-like" onclick="swipeCard('like')" title="Curtir">❤️</button>
+  </div>
+</div>
+
+<!-- MATCH POPUP -->
+<div class="match-popup-overlay" id="match-popup">
+  <div class="match-popup">
+    <div class="match-popup-hearts">❤️💘❤️</div>
+    <div class="match-popup-title">É um Match!</div>
+    <div class="match-popup-sub" id="match-popup-sub">Vocês dois escolheram esse filme!</div>
+    <div id="match-popup-poster-wrap"></div>
+    <div class="match-popup-movie" id="match-popup-movie"></div>
+    <div class="match-popup-year"  id="match-popup-year"></div>
+    <button class="match-popup-btn" onclick="closeMatchPopup(true)">🍿 Vamos assistir!</button>
+    <button class="match-popup-btn-sec" onclick="closeMatchPopup(false)">Continuar escolhendo</button>
   </div>
 </div>
 
@@ -2576,7 +2810,244 @@
     document.getElementById('info-modal').classList.remove('open');
   };
 
-    // ─── dice / random ───────────────────────────────────────
+  
+  // ═══ CINEMATCH ═══════════════════════════════════════════
+  const matchRef = ref(db, 'match');
+  let matchCards      = [];   // pending movies array
+  let matchIndex      = 0;    // current card index
+  let matchUser       = 'joao'; // who is using this device
+  let matchCardEl     = null;
+  let matchDragStart  = null;
+  let matchDragX      = 0;
+  let matchCurrentId  = null;
+
+  // Listen to Firebase match state
+  onValue(matchRef, snap => {
+    const data = snap.val() || {};
+    // Check for a new match
+    if (data.matched && data.matchedMovie) {
+      const m = data.matchedMovie;
+      // Show popup if match screen is open or main screen
+      showMatchPopup(m);
+    }
+  });
+
+  window.openMatchScreen = function() {
+    const pending = Object.entries(movies)
+      .filter(([,m]) => !m.done)
+      .map(([id,m]) => ({ id, ...m }))
+      .sort(() => Math.random() - 0.5); // shuffle
+
+    if (!pending.length) {
+      showToast('Sem filmes pra avaliar!'); return;
+    }
+
+    matchCards  = pending;
+    matchIndex  = 0;
+
+    // Ask who is using this device
+    const names  = settings.names || {};
+    const joaoName = names.joao || 'João';
+    const elaName  = names.ela  || 'Manu';
+
+    // Show user picker first
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--bg);border-radius:20px;padding:2rem 1.5rem;width:86%;max-width:300px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:12px;">💘</div>
+        <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:6px;">Quem é você?</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Cada um avalia no próprio celular</div>
+        <button onclick="startMatch('joao');this.closest('div[style]').remove();" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--indigo);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">💜 ${escHtml(joaoName)}</button>
+        <button onclick="startMatch('ela');this.closest('div[style]').remove();" style="width:100%;padding:13px;border-radius:99px;border:none;background:var(--rose);color:#fff;font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;">🩷 ${escHtml(elaName)}</button>
+        <button onclick="this.closest('div[style]').remove();" style="width:100%;padding:11px;border-radius:99px;border:1.5px solid var(--border2);background:none;color:var(--muted);font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;">Cancelar</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  };
+
+  window.startMatch = function(user) {
+    matchUser = user;
+    const names = settings.names || {};
+    const badge = document.getElementById('match-user-badge');
+    if (user === 'joao') {
+      badge.textContent = names.joao || 'João';
+      badge.className   = 'match-user-badge';
+    } else {
+      badge.textContent = names.ela || 'Manu';
+      badge.className   = 'match-user-badge ela';
+    }
+
+    // Reset this user's votes in Firebase
+    update(matchRef, { [`votes_${user}`]: null });
+
+    document.getElementById('fab-btn').style.display   = 'none';
+    document.getElementById('main-screen').style.display = 'none';
+    const ms = document.getElementById('match-screen');
+    ms.style.display    = 'flex';
+    ms.style.flexDirection = 'column';
+    ms.style.alignItems = 'center';
+    ms.style.position   = 'fixed';
+    ms.style.inset      = '0';
+    ms.style.zIndex     = '130';
+    ms.style.background = 'var(--bg2)';
+
+    renderMatchCard();
+  };
+
+  function renderMatchCard() {
+    const stack = document.getElementById('match-stack');
+    stack.innerHTML = '';
+
+    if (matchIndex >= matchCards.length) {
+      // Done voting
+      saveMatchVotes();
+      stack.innerHTML = `
+        <div class="match-waiting">
+          <div class="match-waiting-icon">⏳</div>
+          <div class="match-waiting-title">Aguardando...</div>
+          <div class="match-waiting-sub">Você avaliou todos os filmes!<br>Esperando o outro terminar para ver se tem match 💘</div>
+        </div>`;
+      document.getElementById('match-progress').textContent = '';
+      return;
+    }
+
+    const m = matchCards[matchIndex];
+    matchCurrentId = m.id;
+
+    document.getElementById('match-progress').textContent =
+      `${matchIndex + 1} de ${matchCards.length}`;
+
+    const card = document.createElement('div');
+    card.className = 'match-card';
+    card.id        = 'match-active-card';
+
+    const posterHtml = m.cover
+      ? `<img class="match-card-poster" src="${m.cover}" alt="capa">`
+      : `<div class="match-card-poster-ph">🎬</div>`;
+
+    const metaParts = [];
+    if (m.year)  metaParts.push(`<span class="badge badge-genre">${m.year}</span>`);
+    if (m.genre) metaParts.push(`<span class="badge badge-genre">${escHtml(m.genre)}</span>`);
+
+    card.innerHTML = `
+      ${posterHtml}
+      <div class="match-stamp match-stamp-like" id="stamp-like">❤️ Sim</div>
+      <div class="match-stamp match-stamp-nope" id="stamp-nope">👎 Não</div>
+      <div class="match-card-info">
+        <div class="match-card-title">${escHtml(m.title)}</div>
+        <div class="match-card-meta">${metaParts.join('')}</div>
+      </div>`;
+
+    stack.appendChild(card);
+    matchCardEl = card;
+    setupCardDrag(card);
+  }
+
+  function setupCardDrag(card) {
+    const onStart = (x) => { matchDragStart = x; matchDragX = 0; };
+    const onMove  = (x) => {
+      if (matchDragStart === null) return;
+      matchDragX = x - matchDragStart;
+      const rot  = matchDragX * 0.08;
+      card.style.transform   = `translateX(${matchDragX}px) rotate(${rot}deg)`;
+      card.style.transition  = 'none';
+      const likeEl  = document.getElementById('stamp-like');
+      const nopeEl  = document.getElementById('stamp-nope');
+      if (matchDragX > 30)       { likeEl.style.opacity = Math.min((matchDragX-30)/60, 1); nopeEl.style.opacity = 0; }
+      else if (matchDragX < -30) { nopeEl.style.opacity = Math.min((-matchDragX-30)/60, 1); likeEl.style.opacity = 0; }
+      else                       { likeEl.style.opacity = 0; nopeEl.style.opacity = 0; }
+    };
+    const onEnd   = () => {
+      if (matchDragStart === null) return;
+      matchDragStart = null;
+      if      (matchDragX >  80) swipeCard('like');
+      else if (matchDragX < -80) swipeCard('nope');
+      else {
+        card.style.transition = 'transform 0.3s cubic-bezier(.34,1.56,.64,1)';
+        card.style.transform  = '';
+        document.getElementById('stamp-like').style.opacity = 0;
+        document.getElementById('stamp-nope').style.opacity = 0;
+      }
+    };
+
+    // Touch
+    card.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+    card.addEventListener('touchmove',  e => onMove(e.touches[0].clientX),  { passive: true });
+    card.addEventListener('touchend',   () => onEnd());
+    // Mouse
+    card.addEventListener('mousedown',  e => onStart(e.clientX));
+    window.addEventListener('mousemove', e => { if (matchDragStart !== null) onMove(e.clientX); });
+    window.addEventListener('mouseup',   () => onEnd());
+  }
+
+  window.swipeCard = function(dir) {
+    const card = document.getElementById('match-active-card');
+    if (!card) return;
+
+    const flyX = dir === 'like' ? 600 : -600;
+    card.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+    card.style.transform  = `translateX(${flyX}px) rotate(${dir === 'like' ? 20 : -20}deg)`;
+    card.style.opacity    = '0';
+
+    // Store vote locally
+    const id = matchCurrentId;
+    if (!matchVotes) matchVotes = {};
+    matchVotes[id] = (dir === 'like');
+
+    setTimeout(() => {
+      matchIndex++;
+      renderMatchCard();
+    }, 350);
+  };
+
+  let matchVotes = {};
+
+  async function saveMatchVotes() {
+    const key = `votes_${matchUser}`;
+    await update(matchRef, { [key]: matchVotes });
+
+    // Check for match against the other user's votes
+    const snap   = await new Promise(res => { const u = onValue(matchRef, v => { u(); res(v); }); });
+    const data   = snap.val() || {};
+    const other  = matchUser === 'joao' ? 'votes_ela' : 'votes_joao';
+    const myV    = matchVotes;
+    const otherV = data[other] || {};
+
+    // Find common likes
+    const matches = matchCards.filter(m => myV[m.id] && otherV[m.id]);
+    if (matches.length) {
+      const picked = matches[Math.floor(Math.random() * matches.length)];
+      await update(matchRef, { matched: true, matchedMovie: { id: picked.id, title: picked.title, cover: picked.cover || null, year: picked.year || null } });
+    }
+  }
+
+  function showMatchPopup(m) {
+    const posterWrap = document.getElementById('match-popup-poster-wrap');
+    posterWrap.innerHTML = m.cover
+      ? `<img class="match-popup-poster" src="${m.cover}">`
+      : `<div class="match-popup-poster-ph">🎬</div>`;
+    document.getElementById('match-popup-movie').textContent = m.title;
+    document.getElementById('match-popup-year').textContent  = m.year || '';
+    document.getElementById('match-popup').classList.add('open');
+  }
+
+  window.closeMatchPopup = async function(watchNow) {
+    document.getElementById('match-popup').classList.remove('open');
+    // Clear match state in Firebase
+    await update(matchRef, { matched: false, matchedMovie: null, votes_joao: null, votes_ela: null });
+    if (watchNow) closeMatchScreen();
+  };
+
+  window.closeMatchScreen = function() {
+    matchVotes = {};
+    matchIndex = 0;
+    document.getElementById('match-screen').style.display = 'none';
+    document.getElementById('fab-btn').style.display      = 'block';
+    document.getElementById('main-screen').style.display  = 'block';
+  };
+  // ════════════════════════════════════════════════════════
+
+  // ─── dice / random ───────────────────────────────────────
   window.openDiceModal = function() {
     const pending = Object.values(movies).filter(m => !m.done);
     if (!pending.length) {
