@@ -1221,8 +1221,10 @@
     display: flex;
     gap: 6px;
     overflow-x: auto;
-    padding: 0 14px 10px;
+    padding: 8px 14px 8px;
     scrollbar-width: none;
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
   }
   .genre-filters::-webkit-scrollbar { display: none; }
   .genre-filter-btn {
@@ -2501,9 +2503,9 @@
 
     row.style.display = 'flex';
 
-    const btns = [{ label: 'Todos', value: '' }, ...genres.map(g => ({ label: g, value: g }))];
+    const btns = [{ label: 'Todos', value: '' }, ...genres.map(g => ({ label: genreEmoji(g) + ' ' + g, value: g }))];
     row.innerHTML = btns.map(b =>
-      '<button class="genre-filter-btn' + (currentGenre === b.value ? ' active' : '') + '" data-genre="' + escHtml(b.value) + '">' + escHtml(b.label) + '</button>'
+      '<button class="genre-filter-btn' + (currentGenre === b.value ? ' active' : '') + '" data-genre="' + escHtml(b.value) + '">' + b.label + '</button>'
     ).join('');
 
     row.querySelectorAll('.genre-filter-btn').forEach(btn => {
