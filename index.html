@@ -2224,8 +2224,34 @@
   });
 
   // ─── listen movies ────────────────────────────────────────
+  let knownMovieIds  = null; // null = first load, Set after
+  let notifInitDone  = false;
+
   onValue(moviesRef, snap => {
-    movies = snap.val() || {};
+    const fresh = snap.val() || {};
+    const freshIds = new Set(Object.keys(fresh));
+
+    if (knownMovieIds === null) {
+      // First load — just store ids, no notification
+      knownMovieIds = freshIds;
+    } else if (loggedIn && notifInitDone) {
+      // Find new ids
+      const newIds = [...freshIds].filter(id => !knownMovieIds.has(id));
+      newIds.forEach(id => {
+        const m = fresh[id];
+        if (!m) return;
+        // Only notify if added by the OTHER user (not self)
+        const names   = settings.names || {};
+        const nameMap = { joao: names.joao || 'João', ela: names.ela || 'Manu', ambos: 'Ambos' };
+        const who     = nameMap[m.who] || m.who || '';
+        showToast(`🎬 ${who} adicionou "${m.title}"!`, 4000);
+      });
+      knownMovieIds = freshIds;
+    } else {
+      knownMovieIds = freshIds;
+    }
+
+    movies = fresh;
     if (loggedIn) renderList();
   });
 
@@ -2252,11 +2278,11 @@
     if (loggedIn) renderList();
   }
 
-  function showToast(msg) {
+  function showToast(msg, duration = 2200) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
+    setTimeout(() => t.classList.remove('show'), duration);
   }
 
   // ─── login ────────────────────────────────────────────────
@@ -2290,6 +2316,7 @@
       applyNames();
       renderList();
       startMatchListener();
+      setTimeout(() => { notifInitDone = true; }, 2000);
     }
   }
 
@@ -2312,6 +2339,7 @@
       applyNames();
       renderList();
       startMatchListener();
+      setTimeout(() => { notifInitDone = true; }, 2000);
     } else {
       document.getElementById('err-msg').textContent = 'Senha incorreta.';
       document.getElementById('pwd-input').value = '';
