@@ -1469,6 +1469,47 @@
   }
   .st-cal-tooltip.show { display: block; }
 
+
+  /* SEARCH MODE TOGGLE */
+  .search-mode-row {
+    display: flex; gap: 6px; margin-bottom: 8px;
+  }
+  .search-mode-btn {
+    flex: 1; padding: 6px 0;
+    border-radius: 99px;
+    border: 1.5px solid var(--border2);
+    background: var(--bg2);
+    color: var(--muted);
+    font-size: 12px; font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer; text-align: center;
+    transition: all 0.12s;
+  }
+  .search-mode-btn.active {
+    background: var(--accent-lt);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .ac-actor-section {
+    padding: 4px 12px 3px;
+    font-size: 10px; font-weight: 800;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.07em; background: var(--bg2);
+  }
+  .ac-actor-thumb {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+    background: var(--bg3);
+  }
+  .ac-actor-thumb-ph {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg3); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
   /* AUTOCOMPLETE */
   .autocomplete-wrap { position: relative; flex: 1; }
   .autocomplete-list {
@@ -1997,6 +2038,10 @@
     <div class="modal-header">
       <span class="modal-title">🎬 Adicionar filme</span>
       <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="search-mode-row">
+      <button class="search-mode-btn active" id="mode-btn-movie" onclick="setSearchMode('movie')">🎬 Buscar por filme</button>
+      <button class="search-mode-btn" id="mode-btn-actor" onclick="setSearchMode('actor')">🎭 Buscar por ator</button>
     </div>
     <div class="add-row">
       <div class="autocomplete-wrap">
@@ -3006,6 +3051,73 @@
   // ─── autocomplete ─────────────────────────────────────────
   let acTimer = null;
 
+
+  // ─── search mode (movie / actor) ─────────────────────────
+  let searchMode = 'movie';
+
+  window.setSearchMode = function(mode) {
+    searchMode = mode;
+    const input = document.getElementById('movie-input');
+    input.value = '';
+    document.getElementById('ac-list').classList.remove('open');
+    document.getElementById('mode-btn-movie').classList.toggle('active', mode === 'movie');
+    document.getElementById('mode-btn-actor').classList.toggle('active', mode === 'actor');
+    input.placeholder = mode === 'actor' ? 'Nome do ator ou atriz...' : 'Nome do filme...';
+    input.focus();
+  };
+
+  async function searchByActor(query) {
+    if (query.length < 2) return [];
+    try {
+      // 1. Find person
+      const pRes  = await fetch(`https://api.themoviedb.org/3/search/person?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`);
+      const pData = await pRes.json();
+      const person = (pData.results || [])[0];
+      if (!person) return [];
+
+      // 2. Get their movies
+      const mRes  = await fetch(`https://api.themoviedb.org/3/person/${person.id}/movie_credits?api_key=${TMDB_KEY}&language=pt-BR`);
+      const mData = await mRes.json();
+      const movies = (mData.cast || [])
+        .filter(m => m.poster_path)
+        .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+        .slice(0, 8);
+
+      return { person, movies };
+    } catch(e) { return null; }
+  }
+
+  async function renderActorSuggestions(query, listId) {
+    const list = document.getElementById(listId);
+    const result = await searchByActor(query);
+    if (!result || !result.movies.length) {
+      list.classList.remove('open');
+      return;
+    }
+    const { person, movies } = result;
+    const photo = person.profile_path
+      ? `<img class="ac-actor-thumb" src="https://image.tmdb.org/t/p/w92${person.profile_path}">`
+      : `<div class="ac-actor-thumb-ph">🎭</div>`;
+
+    list.innerHTML = `
+      <div class="ac-actor-section">${photo.replace('class="ac-actor-thumb"','class="ac-actor-thumb" style="width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:5px;"')} Filmes de ${escHtml(person.name)}</div>
+      ${movies.map((m, i) => {
+        const year = m.release_date ? m.release_date.slice(0,4) : '';
+        const thumb = m.poster_path
+          ? `<img class="ac-thumb" src="https://image.tmdb.org/t/p/w92${m.poster_path}" loading="lazy">`
+          : `<div class="ac-thumb-placeholder">🎬</div>`;
+        return `<div class="ac-item" onclick="selectSuggestion(${i},'${listId}')">
+          ${thumb}
+          <div class="ac-info">
+            <div class="ac-title">${escHtml(m.title)}</div>
+            ${year ? `<div class="ac-year">${year}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}`;
+
+    list._results = movies;
+    list.classList.add('open');
+  }
   async function searchSuggestions(query) {
     if (query.length < 2) return [];
     try {
@@ -4117,6 +4229,7 @@
   window.closeAddModal = function() {
     document.getElementById('add-modal').classList.remove('open');
     document.getElementById('fab-btn').classList.remove('open');
+    setSearchMode('movie');
   };
   window.closeAddModalOnBg = function(e) {
     if (e.target === document.getElementById('add-modal')) closeAddModal();
