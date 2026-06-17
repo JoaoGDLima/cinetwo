@@ -1265,6 +1265,28 @@
   }
 
 
+
+  /* WHERE WATCHED TOGGLE */
+  .where-row {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .where-btn {
+    flex: 1; padding: 9px 0;
+    border-radius: 99px;
+    border: 1.5px solid var(--border2);
+    background: var(--bg2);
+    color: var(--muted);
+    font-size: 13px; font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer; text-align: center;
+    transition: all 0.12s;
+  }
+  .where-btn.sel {
+    background: var(--accent-lt);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   /* RATING POPUP */
   .rating-overlay {
     display: none;
@@ -1830,11 +1852,11 @@
     </div>
 
     <div class="new-header-stats">
-      <div class="new-stat-card active" id="stat-card-todos" onclick="setStatFilter(this,'todos')">
+      <div class="new-stat-card" id="stat-card-todos" onclick="setStatFilter(this,'todos')">
         <div class="new-stat-num" id="s-total">0</div>
         <div class="new-stat-lbl">Total</div>
       </div>
-      <div class="new-stat-card" id="stat-card-pendente" onclick="setStatFilter(this,'pendente')">
+      <div class="new-stat-card active" id="stat-card-pendente" onclick="setStatFilter(this,'pendente')">
         <div class="new-stat-num" id="s-pending">0</div>
         <div class="new-stat-lbl">A ver</div>
       </div>
@@ -2216,6 +2238,10 @@
       <button class="star-btn" data-star="4">⭐</button>
       <button class="star-btn" data-star="5">⭐</button>
     </div>
+    <div class="where-row" id="rating-where-row">
+      <button class="where-btn" data-where="cinema" onclick="selectRatingWhere(this,'cinema')">🎬 Cinema</button>
+      <button class="where-btn" data-where="casa" onclick="selectRatingWhere(this,'casa')">🏠 Casa</button>
+    </div>
     <textarea class="rating-comment" id="rating-comment" rows="2" placeholder="Comentário rápido (opcional)..."></textarea>
     <button class="rating-save-btn" onclick="saveRating()">Salvar avaliação</button>
     <button class="rating-skip-btn" onclick="closeRatingPopup()">Pular</button>
@@ -2358,7 +2384,12 @@
 
       <div id="edit-watched-wrap" style="display:none;margin-bottom:12px;">
         <label class="field-label">📅 Data que assistiram</label>
-        <input type="date" id="edit-watched-date" style="width:100%;">
+        <input type="date" id="edit-watched-date" style="width:100%;margin-bottom:12px;">
+        <label class="field-label">📍 Onde assistiram</label>
+        <div class="where-row" id="edit-where-row">
+          <button class="where-btn" data-where="cinema" onclick="selectEditWhere(this,'cinema')">🎬 Cinema</button>
+          <button class="where-btn" data-where="casa" onclick="selectEditWhere(this,'casa')">🏠 Casa</button>
+        </div>
       </div>
       </div>
 
@@ -2451,7 +2482,7 @@
   // ─── state ───────────────────────────────────────────────
   let movies = {};
   let settings = { pwd: '', names: { joao: 'João', ela: 'Manu' } };
-  let currentFilter = 'todos';
+  let currentFilter = 'pendente';
   let currentGenre  = '';
   let selectedWho = 'joao';
   let loggedIn = false;
@@ -2857,7 +2888,7 @@
       const watchedStr = m.done && m.watchedAt
         ? new Date(m.watchedAt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})
         : '';
-      const row2 = (watchedStr || m.rating || m.comment) && m.done;
+      const row2 = (watchedStr || m.rating || m.comment || m.watchedWhere) && m.done;
 
       return `
       <div class="movie-item" id="item-${m.id}" onclick="openActionSheet('${m.id}')">
@@ -2871,10 +2902,12 @@
           <div class="movie-meta" id="meta-${m.id}">
             ${m.year  ? `<span class="badge badge-genre">${m.year}</span>` : ''}
             ${m.genre ? `<span class="badge badge-genre">${genreEmoji(m.genre)} ${escHtml(m.genre)}</span>` : ''}
+            <span class="badge badge-genre">⏱ ${fmtTime(movieRuntime(m))}</span>
             <span class="badge ${badgeClass[m.who] || 'badge-ambos'}">${escHtml(nameMap[m.who] || m.who)}</span>
           </div>
           ${row2 ? `<div class="movie-meta-row2">
             ${watchedStr ? `<span class="badge-date">✓ ${watchedStr}</span>` : ''}
+            ${m.watchedWhere ? `<span style="font-size:11px;">${m.watchedWhere === 'cinema' ? '🎬 Cinema' : '🏠 Casa'}</span>` : ''}
             ${m.rating   ? `<span style="font-size:11px;letter-spacing:-1px;">${'⭐'.repeat(m.rating)}</span>` : ''}
             ${m.comment  ? `<span class="badge-comment">"${escHtml(m.comment)}"</span>` : ''}
           </div>` : ''}
@@ -2975,6 +3008,14 @@
   let editingTmdbId = null;
   let editingYear   = null;
 
+
+  let editingWhere = null;
+
+  window.selectEditWhere = function(el, where) {
+    editingWhere = (editingWhere === where) ? null : where;
+    document.querySelectorAll('#edit-where-row .where-btn').forEach(b => b.classList.remove('sel'));
+    if (editingWhere) el.classList.add('sel');
+  };
   window.openEditModal = function(id) {
     const m = movies[id];
     if (!m) return;
@@ -3019,9 +3060,14 @@
       } else {
         watchedInput.value = '';
       }
+      editingWhere = m.watchedWhere || null;
+      document.querySelectorAll('#edit-where-row .where-btn').forEach(b => {
+        b.classList.toggle('sel', b.dataset.where === editingWhere);
+      });
     } else {
       watchedWrap.style.display = 'none';
       watchedInput.value = '';
+      editingWhere = null;
     }
 
     const names = settings.names || {};
@@ -3119,6 +3165,7 @@
       } else {
         updated.watchedAt = m.watchedAt || null;
       }
+      updated.watchedWhere = editingWhere || null;
     }
 
     await update(ref(db, `movies/${editingId}`), updated);
@@ -3335,7 +3382,7 @@
     return (data.results && data.results[0]) || null;
   }
 
-  function renderInfoContent(d, posterEl) {
+  function renderInfoContent(d, posterEl, movieId) {
     document.getElementById('info-loading').style.display = 'none';
     document.getElementById('info-overview').textContent = d.overview || 'Sinopse não disponível.';
 
@@ -3359,6 +3406,11 @@
 
     if (d.poster_path) {
       posterEl.innerHTML = `<img src="https://image.tmdb.org/t/p/w200${d.poster_path}" style="width:100%;height:100%;object-fit:cover;">`;
+    }
+
+    // Salva a duração real no banco (sobrescreve a estimativa por gênero)
+    if (d.runtime && movieId && movies[movieId] && movies[movieId].runtime !== d.runtime) {
+      update(ref(db, `movies/${movieId}`), { runtime: d.runtime }).catch(() => {});
     }
 
     // Fetch streaming and related
@@ -3531,7 +3583,7 @@
 
       if (tmdbId) {
         const d = await fetchTmdbDetails(tmdbId);
-        renderInfoContent(d, posterEl);
+        renderInfoContent(d, posterEl, id);
       } else {
         document.getElementById('info-loading').style.display = 'none';
         document.getElementById('info-overview').textContent  = 'Não foi possível encontrar detalhes para este filme.';
@@ -4141,15 +4193,27 @@
   let ratingMovieId  = null;
   let ratingSelected = 0;
 
+
+  let ratingWhere = null;
+
+  window.selectRatingWhere = function(el, where) {
+    ratingWhere = (ratingWhere === where) ? null : where; // toggle off if tapped again
+    document.querySelectorAll('#rating-where-row .where-btn').forEach(b => b.classList.remove('sel'));
+    if (ratingWhere) el.classList.add('sel');
+  };
   window.openRatingPopup = function(id) {
     const m = movies[id];
     if (!m) return;
     ratingMovieId  = id;
     ratingSelected = m.rating || 0;
+    ratingWhere    = m.watchedWhere || null;
 
     document.getElementById('rating-movie-title').textContent = m.title;
     document.getElementById('rating-comment').value = m.comment || '';
     updateStars(ratingSelected);
+    document.querySelectorAll('#rating-where-row .where-btn').forEach(b => {
+      b.classList.toggle('sel', b.dataset.where === ratingWhere);
+    });
     document.getElementById('rating-popup').classList.add('open');
 
     // Star click handlers
@@ -4171,11 +4235,10 @@
     if (!ratingMovieId) return;
     const comment = document.getElementById('rating-comment').value.trim();
     const patch = {};
-    if (ratingSelected > 0) patch.rating  = ratingSelected;
-    if (comment)            patch.comment = comment;
-    if (Object.keys(patch).length) {
-      await update(ref(db, `movies/${ratingMovieId}`), patch);
-    }
+    if (ratingSelected > 0) patch.rating        = ratingSelected;
+    if (comment)            patch.comment       = comment;
+    patch.watchedWhere = ratingWhere || null;
+    await update(ref(db, `movies/${ratingMovieId}`), patch);
     closeRatingPopup();
     showToast('⭐ Avaliação salva!');
   };
@@ -4184,6 +4247,7 @@
     document.getElementById('rating-popup').classList.remove('open');
     ratingMovieId  = null;
     ratingSelected = 0;
+    ratingWhere    = null;
   };
 
 
