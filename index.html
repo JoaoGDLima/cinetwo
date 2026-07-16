@@ -2496,10 +2496,10 @@
     const val = snap.val();
     if (val) {
       settings = val;
-      applyNames();
-      // Tenta auto-login após receber settings do Firebase (senha pode ter sido alterada)
-      tryAutoLogin();
     }
+    settingsLoaded = true;
+    applyNames();
+    tryAutoLogin();
   });
 
   // ─── listen movies ────────────────────────────────────────
@@ -2580,15 +2580,15 @@
 
   // ─── auto-login ───────────────────────────────────────────
   const SAVED_KEY = 'cinetwo_saved_pwd';
+  let settingsLoaded = false;
 
   function tryAutoLogin() {
+    if (!settingsLoaded) return; // espera o Firebase carregar as settings
     const saved = localStorage.getItem(SAVED_KEY);
     if (!saved || loggedIn) return;
-    // Preenche o campo e marca o checkbox
     document.getElementById('pwd-input').value = saved;
     document.getElementById('remember-me').checked = true;
-    // Tenta login com a senha salva vs senha atual das settings
-    if (saved === settings.pwd) {
+    if (saved === (settings.pwd || '')) {
       loggedIn = true;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-screen').style.display  = 'block';
@@ -2603,10 +2603,13 @@
   tryAutoLogin();
 
   window.doLogin = function() {
+    if (!settingsLoaded) {
+      document.getElementById('err-msg').textContent = 'Aguardando conexão...';
+      return;
+    }
     const val = document.getElementById('pwd-input').value;
-    if (val === settings.pwd) {
+    if (val === (settings.pwd || '')) {
       loggedIn = true;
-      // Salvar ou limpar senha lembrada
       if (document.getElementById('remember-me').checked) {
         localStorage.setItem(SAVED_KEY, val);
       } else {
