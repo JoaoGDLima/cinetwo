@@ -2494,13 +2494,25 @@
   // ─── listen settings ──────────────────────────────────────
   onValue(settingsRef, snap => {
     const val = snap.val();
-    if (val) {
-      settings = val;
-    }
+    if (val) settings = val;
     settingsLoaded = true;
     applyNames();
+    // Se o usuário já tentou logar antes do Firebase responder, tenta agora
+    if (pendingLoginAttempt && !loggedIn) {
+      pendingLoginAttempt = false;
+      window.doLogin();
+      return;
+    }
     tryAutoLogin();
   });
+
+  // Fallback: se o Firebase não responder em 5s, libera o login igualmente
+  setTimeout(() => {
+    if (!settingsLoaded) {
+      settingsLoaded = true;
+      document.getElementById('err-msg').textContent = '';
+    }
+  }, 5000);
 
   // ─── listen movies ────────────────────────────────────────
   let knownMovieIds  = null; // null = first load, Set after
@@ -2581,47 +2593,48 @@
   // ─── auto-login ───────────────────────────────────────────
   const SAVED_KEY = 'cinetwo_saved_pwd';
   let settingsLoaded = false;
+  let pendingLoginAttempt = false; // guarda se o user tentou logar antes do Firebase responder
+
+  function completeLogin() {
+    loggedIn = true;
+    if (document.getElementById('remember-me').checked) {
+      localStorage.setItem(SAVED_KEY, document.getElementById('pwd-input').value);
+    } else {
+      localStorage.removeItem(SAVED_KEY);
+    }
+    document.getElementById('err-msg').textContent = '';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display  = 'block';
+    applyNames();
+    renderList();
+    startMatchListener();
+    setTimeout(() => { notifInitDone = true; }, 2000);
+  }
 
   function tryAutoLogin() {
-    if (!settingsLoaded) return; // espera o Firebase carregar as settings
+    if (!settingsLoaded || loggedIn) return;
     const saved = localStorage.getItem(SAVED_KEY);
-    if (!saved || loggedIn) return;
+    if (!saved) return;
     document.getElementById('pwd-input').value = saved;
     document.getElementById('remember-me').checked = true;
     if (saved === (settings.pwd || '')) {
-      loggedIn = true;
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('main-screen').style.display  = 'block';
-      applyNames();
-      renderList();
-      startMatchListener();
-      setTimeout(() => { notifInitDone = true; }, 2000);
+      completeLogin();
     }
   }
 
-  // Tenta imediatamente (funciona se a senha não foi alterada)
   tryAutoLogin();
 
   window.doLogin = function() {
+    const val = document.getElementById('pwd-input').value;
     if (!settingsLoaded) {
-      document.getElementById('err-msg').textContent = 'Aguardando conexão...';
+      // Firebase ainda não respondeu — guarda a tentativa e mostra aviso
+      pendingLoginAttempt = true;
+      document.getElementById('err-msg').textContent = 'Conectando... tente novamente em instantes.';
       return;
     }
-    const val = document.getElementById('pwd-input').value;
-    if (val === (settings.pwd || '')) {
-      loggedIn = true;
-      if (document.getElementById('remember-me').checked) {
-        localStorage.setItem(SAVED_KEY, val);
-      } else {
-        localStorage.removeItem(SAVED_KEY);
-      }
-      document.getElementById('err-msg').textContent = '';
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('main-screen').style.display  = 'block';
-      applyNames();
-      renderList();
-      startMatchListener();
-      setTimeout(() => { notifInitDone = true; }, 2000);
+    const correctPwd = settings.pwd || '';
+    if (val === correctPwd) {
+      completeLogin();
     } else {
       document.getElementById('err-msg').textContent = 'Senha incorreta.';
       document.getElementById('pwd-input').value = '';
