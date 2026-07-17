@@ -2626,6 +2626,10 @@
 
   window.doLogin = function() {
     const val = document.getElementById('pwd-input').value;
+    console.log('[DEBUG] settingsLoaded:', settingsLoaded);
+    console.log('[DEBUG] settings.pwd:', JSON.stringify(settings.pwd));
+    console.log('[DEBUG] val digitado:', JSON.stringify(val));
+    console.log('[DEBUG] match:', val === (settings.pwd || ''));
     if (!settingsLoaded) {
       // Firebase ainda não respondeu — guarda a tentativa e mostra aviso
       pendingLoginAttempt = true;
