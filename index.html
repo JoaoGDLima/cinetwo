@@ -2494,6 +2494,7 @@
   // ─── listen settings ──────────────────────────────────────
   onValue(settingsRef, snap => {
     const val = snap.val();
+    console.log('[DEBUG] Firebase settings raw:', JSON.stringify(val));
     if (val) settings = val;
     settingsLoaded = true;
     applyNames();
