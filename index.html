@@ -2498,7 +2498,6 @@
     if (val) settings = val;
     settingsLoaded = true;
     applyNames();
-    // Se o usuário já tentou logar antes do Firebase responder, tenta agora
     if (pendingLoginAttempt && !loggedIn) {
       pendingLoginAttempt = false;
       window.doLogin();
@@ -2506,14 +2505,6 @@
     }
     tryAutoLogin();
   });
-
-  // Fallback: se o Firebase não responder em 5s, libera o login igualmente
-  setTimeout(() => {
-    if (!settingsLoaded) {
-      settingsLoaded = true;
-      document.getElementById('err-msg').textContent = '';
-    }
-  }, 5000);
 
   // ─── listen movies ────────────────────────────────────────
   let knownMovieIds  = null; // null = first load, Set after
